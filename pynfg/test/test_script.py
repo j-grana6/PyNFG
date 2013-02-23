@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+## -*- coding: utf-8 -*-
 """
 Created on Thu Nov 15 16:56:01 2012
 
@@ -29,25 +29,25 @@ import PGTsolutions
 #parinput2 = {'D1': 'a'}
 #print( "The probability that D2 chooses %s given D1 chooses %s is %s" \
 #        % (D2.value, parinput2['D1'], str(D2.prob(parentinput=parinput2))) )
-#        
+#
 #noise = 0.1
 #D2.CPT = D2.perturbCPT(noise)
 #print( "After perturbing D2.CPT with noise=%s, the new probability is %s"\
 #        % (str(noise), str(D2.prob(parentinput=parinput2))) )
-#        
+#
 #parinput3 = {'D1': 'b', 'D2': 'c'}
 #print( "The probability that D3 chooses %s given D1 chooses %s and D2 chooses"\
 #        " %s is %s" % (D3.value, parinput3['D1'], parinput3['D2'], \
 #        str(D2.prob(parentinput=parinput3))) )
-#        
+#
 #print("Comparing D2.CPT before and after perturbing a sliver")
 #print(D2.CPT[0,:])
-#D2.CPT = D2.perturbCPT(0.1, sliver=parinput2)        
+#D2.CPT = D2.perturbCPT(0.1, sliver=parinput2)
 #print(D2.CPT[0,:])
 #
 #print("Comparing D3.CPT before and after perturbing a sliver")
 #print(D3.CPT[1,0,:])
-#D3.CPT = D3.perturbCPT(0.1, sliver=parinput3)        
+#D3.CPT = D3.perturbCPT(0.1, sliver=parinput3)
 #print(D3.CPT[1,0,:])
 #
 #dist1 = randvars.randint
@@ -76,7 +76,7 @@ import PGTsolutions
 #print('Prob of %s at C3 given C2 is %s: %s' % (C3.value, C2.value, \
 #        C3.prob()))
 #
-#newc2 = C2.draw_value(parentinput={'C1': 3})    
+#newc2 = C2.draw_value(parentinput={'C1': 3})
 #
 #print newc2
 #C2.set_value(newc2)
@@ -90,10 +90,10 @@ import PGTsolutions
 #distip1 = (dist1, params1, space1)
 #C1 = ChanceNode('C1', description='root CN given by randint 1 to 4', \
 #                distip=distip1)
-#                
+#
 #D1 = DecisionNode('D1', '1', [-1, 0, 1], parents=[C1], \
 #                    description='This is a child node of C1')
-#                    
+#
 #D1.CPT = D1.randomCPT(mixed=False)
 #
 #dist2 = randvars.norm
@@ -101,20 +101,20 @@ import PGTsolutions
 #distip2 = (dist2, params2)
 #C2 = ChanceNode('C2', distip=distip2, \
 #                description='CN given by norm with scale fixed and loc given by D1')
-#        
+#
 #def func3(var1=1, var2=0):
 #    r = np.sign(var1+var2)
 #    return r
-#    
+#
 #params3 = {'var1': C2}
 #continuous3 = False
 #space3 = [-1, 0, 1]
 #C3 = DeterNode('C3', func3, params3, continuous3, space=space3, \
 #                description='a disc. deterministic node child of C2')
-#                
+#
 #D2 = DecisionNode('D2', '2', [0, 1], parents=[D1, C3], \
 #                    description='child of D1 and C3')
-#                    
+#
 #D2.CPT = D2.randomCPT(mixed=True)
 #
 #D3 = DecisionNode('D3', '2', [2, 3, 4], parents=[], description='a root DN')
@@ -124,12 +124,12 @@ import PGTsolutions
 #def func4(var1=1, var2=3):
 #    r = np.exp(var2-var1)
 #    return r
-#    
+#
 #params4 = {'var1': D2, 'var2': D3}
 #continuous4 = True
 #C4 = DeterNode('C4', func4, params4, continuous4, \
 #                description='a cont. deterministic node child of D2 and D3')
-#                
+#
 #dist5 = randvars.alpha
 #params5 = [C4, 2, 6]
 #distip5 = (dist5, params5)
@@ -145,7 +145,7 @@ import PGTsolutions
 #Game.draw_graph()
 
 #from types import IntType
-#            
+#
 #dist1 = randvars.randint
 #params1 = [0, 3]
 #space1 = range(3)
@@ -155,7 +155,7 @@ import PGTsolutions
 #
 #D1 = DecisionNode('D1', '1', [0, 1], parents=[C1],\
 #                    description='child node of C1. belongs to p1')
-#                    
+#
 #D2 = DecisionNode('D2', '2', [0, 1], parents=[C1],\
 #                    description='child node of C1. belongs to p2')
 #
@@ -163,20 +163,20 @@ import PGTsolutions
 #    if (var1+var2+var3)%2 == 0:
 #        return 'even'
 #    else:
-#        return 'odd'                    
+#        return 'odd'
 #
 #paramsf = {'var1': D1, 'var2': D2, 'var3': C1}
 #continuousf = False
 #spacef = ['even', 'odd']
 #F1 = DeterNode('F1', funcf, paramsf, continuousf, space=spacef,\
 #               description='a disc. DeterNode child of D1, D2, C1')
-#               
+#
 #def ufunc1(F1):
 #    if F1 is 'even':
 #        return 1
 #    else:
 #        return -1
-#        
+#
 #def ufunc2(F1):
 #    if F1 is 'odd':
 #        return 1
@@ -197,8 +197,8 @@ east = 2
 north = 2
 south = 0
 
-up = np.array([0,1])
-down = np.array([0,-1])
+up = np.array([0, 1])
+down = np.array([0 ,-1])
 left = np.array([-1,0])
 right = np.array([1,0])
 stay = np.arra([0,0])
@@ -208,18 +208,18 @@ def adjust(location):
         location[0] = west
     elif location[0]>east:
         location[0] = east
-    
+
     if location[1]<south:
         location[1] = south
     elif location[1]>north:
         location[1] = north
-    
+
     return location
 
 def Fadjust(var1,var2,var3):
     location1 = adjust(var1+var3[0])
     location2 = adjust(var2+var3[1])
-    return [location1, location2]                
+    return [location1, location2]
 
 paramsf = {}
 continuousf = False
@@ -241,8 +241,8 @@ CPTip2 = (CPT2, par2, space2)
 C2 = ChanceNode('C20', distip=CPTip2, description='', basename='C2', time=0)
 
 def adjust1(var1, var2):
-    opponent = adjust(var1+var2[1]) 
-    return [opponent, var2[0]]                   
+    opponent = adjust(var1+var2[1])
+    return [opponent, var2[0]]
 
 paramsseek = {var1: C1, var2: F}
 continuousseek = False
@@ -253,58 +253,58 @@ Fseek = DeterNode('Fseek0', adjust1, paramsseek, continuousseek, \
 
 def adjust2(var1, var2):
     opponent = adjust(var1+var2[0])
-    return [opponent, var2[1]] 
-    
+    return [opponent, var2[1]]
+
 paramshide = {var1: C2, var2: F}
 Fhide = DeterNode('Fhide0', adjust2, paramshide, continuousseek,
               space=spaceseek, basename='Fhide', time=0)
 
 D1 = DecisionNode('D10', 'seeker', [up, down, left, right, stay], \
                     parents=[Fseek], basename='D1', time=0)
-                    
+
 D2 = DecisionNode('D20', 'hider', [up, down, left, right, stay], \
                     parents=[Fhide], basename='D2', time=0)
 
 nodeset = set([F,Fseek,Fhide,C1,C2,D1,D2])
-               
+
 for t in range(1,10):
-    
+
     paramsf = {var1: D1, var2: D2, var3: F}
     Fa = DeterNode('F%s' %t, Fadjust, paramsf, continuousf, space=spaceseek,\
                    basename='F', time=t)
     F = Fa
     nodeset.add(F)
-                    
+
     C1 = ChanceNode('C1%s' %t, CPTip=CPTip1, basename='C1', time=t)
     nodeset.add(C1)
-    
+
     C2 = ChanceNode('C2%s' %t, CPTip=CPTip2, basename='C2', time=t)
     nodeset.add(C2)
-                    
+
     paramsseek = {var1: C1, var2: F}
     Fseek = DeterNode('Fseek%s' %t, adjust1, paramsseek, continuousseek, \
               space=spaceseek, basename='Fseek', time=t)
     nodeset.add(Fseek)
-    
+
     paramshide = {var1: C2, var2: F}
     Fhide = DeterNode('Fhide%s' %t, adjust2, paramshide, continuousseek, \
               space=spaceseek, basename='Fhide', time=t)
     nodeset.add(Fhide)
-              
+
     D1 = DecisionNode('D1%s' %t, 'seeker', [up, down, left, right, stay], \
                     parents=[Fseek], basename='D1', time=t)
     nodeset.add(D1)
-                    
+
     D2 = DecisionNode('D2%s' %t, 'hider', [up, down, left, right, stay], \
                     parents=[Fhide], basename='D2', time=t)
     nodeset.add(D2)
-    
+
 def reward1(F=[[2,0],[0,2]]):
-    if np.array_equal(F[0], F[1])
+    if np.array_equal(F[0], F[1]):
         return 1
     else:
         return 0
-    
+
 def reward2(F=[[2,0],[0,2]]):
     return -1*reward1(F)
 
@@ -314,7 +314,7 @@ G = iterSemiNFG(nodeset, rfuncs)
 for agent in G.players:
     for n in G.partition[agent]:
         n.uniformCPT()
-#        
+#
 G1 = ewma_jaakkola(G, 'D2', 10, 100, .75, .8, 0.1)
 #G.reward('1', 2)
 #G.draw_graph()
