@@ -14,5 +14,5 @@ from .classes.deternode import DeterNode
 from .classes.iterseminfg import iterSemiNFG
 from .classes.seminfg import SemiNFG
 from .rlsolutions import mcrl, qlearning
-
+from .pgtsolutions import intelligence
 
