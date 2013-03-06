@@ -11,15 +11,17 @@ GNU Affero General Public License
 """
 from __future__ import division
 
+import numpy as np
 from pynfg import DecisionNode, ChanceNode, DeterNode
 from pynfg import SemiNFG
+from pynfg.pgtsolutions.intelligence.iq import iq_MC, iq_MH
 import matplotlib.pyplot as plt
 import time
 
 actions = np.arange(6)
 markets = [(20,2), (10,1), (5,1/2)] #demand (intercept,slope)
 c1 = 2 #marginal costs
-c2 = 2 
+c2 = 2
 
 MCPT = np.ones(len(markets))/len(markets)
 Mparents = []
@@ -36,10 +38,10 @@ def demand(q1, q2, m): #inverse demand
     b = m[1]
     price = a-b*Q
     return price
-    
+
 Dfunc = demand
 Dparams =  {'q1': Q1, 'q2': Q2, 'm': M}
-Dcont = True    
+Dcont = True
 D = DeterNode('D', Dfunc, Dparams, Dcont, description='inv market demand')
 
 def util1(Q1,D):
@@ -49,7 +51,7 @@ def util1(Q1,D):
 def util2(Q2,D):
     profit = Q2*D-c2*Q2
     return profit
-    
+
 u_funcs = {'1': util1, '2': util2}
 
 nodeset = set([M,Q1,Q2,D])
@@ -68,7 +70,7 @@ def welfare(G):
     G.sample()
     w = G.utility('1')+G.utility('2')
     return w
-    
+
 def dens(i):
     return np.power(i,2)
 
