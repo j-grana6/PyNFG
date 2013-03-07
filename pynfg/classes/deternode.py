@@ -28,7 +28,8 @@ class DeterNode(Node):
     :type func: function
     :arg params: keys are input keywords for func, values are parents or
        fixed values if something other than defaults for non-parent inputs is
-       desired.
+       desired.  If the desired parameter is the value of a node, the input should
+       be the node, not node.value().
     :type params: dict
     :arg continuous: True if function takes on continuous values. False if
        discrete.
