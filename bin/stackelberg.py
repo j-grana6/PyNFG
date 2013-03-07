@@ -76,14 +76,14 @@ def dens(i):
 
 S = 20000
 X = 10
-M = 40
+Mm = 40
 burn = 1000
 
 tipoff = time.time()
-intelMC, funcoutMC = iq_MC(G, S, X, M, integrand=welfare)
+intelMC, funcoutMC = iq_MC(G, S, X, Mm, integrand=welfare)
 halftime = time.time()
 print halftime-tipoff
-intelMH, funcoutMH = iq_MH(G, S, X, M, 0.2, dens, integrand=welfare)
+intelMH, funcoutMH = iq_MH(G, S, X, Mm, 0.2, dens, integrand=welfare)
 buzzer = time.time()
 print 'MH as percent of total time: ',(buzzer-halftime)/(buzzer-tipoff)
 
