@@ -156,6 +156,8 @@ class DecisionNode(Node):
            manually before calling this method.
 
         """
+        if not set(parentinput).issubset(set(self.parents)):
+            raise LookupError('Not all entries of parentinput are parents')
         if not self.CPT.any():
             raise AttributeError('CPT for %s is just a zeros array' % self.name)
         ind = []
