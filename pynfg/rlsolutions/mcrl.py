@@ -16,14 +16,14 @@ import time
 import numpy as np
 import matplotlib.pylab as plt
 
-def ewma_mcrl(G, bn, J, N, alpha, delta, eps, uni=False, pureout=False):
+def ewma_mcrl(G, bn, J, N, alpha, delta, eps, uni=False, pureout=False, verbose=1):
     """ Use EWMA MC RL to approximate the optimal CPT at bn given G
-    
+
     :arg G: The iterated semi-NFG on which to perform the RL
     :type G: iterSemiNFG
     :arg bn: the basename of the node with the CPT to be trained
     :type bn: str
-    :arg J: The number of runs per training episode. If a schedule is desired, 
+    :arg J: The number of runs per training episode. If a schedule is desired,
        enter a list or np.array with size equal to N.
     :type J: int, list, or np.array
     :arg N: The number of training episodes
@@ -31,22 +31,25 @@ def ewma_mcrl(G, bn, J, N, alpha, delta, eps, uni=False, pureout=False):
     :arg alpha: The exponential weight for the moving average. If a schedule is
        desired, enter a list or np.array with size equal to N
     :type alpha: int, list or np.array
-    :arg delta: The discount factor 
+    :arg delta: The discount factor
     :type delta: float
     :arg eps: The maximum step-size for policy improvements
     :type eps: float
-    :arg uni: if True, training is initialized with a uniform policy. Default 
+    :arg uni: if True, training is initialized with a uniform policy. Default
        False to allow "seeding" with different policies, e.g. level k-1
     :type uni: bool
-    :arg pureout: if True, the policy is turned into a pure policy at the end 
+    :arg pureout: if True, the policy is turned into a pure policy at the end
        of training by assigning argmax actions prob 1. Default is False
     :type pureout: bool
-    
+    :arg verbose: If True, the step in the iteration is printed at every step.
+       Default is True.
+    :type verbose: bool
+
     Example::
-        
+
         G1, Rseries = ewma_mcrl(G, 'D1', J=np.floor(linspace(300,100,num=50)), \
            N=50, alpha=1, delta=0.8, eps=0.4)
-    
+
     """
     timepassed = np.zeros(N)
     # initializing training schedules from scalar inputs
@@ -73,7 +76,8 @@ def ewma_mcrl(G, bn, J, N, alpha, delta, eps, uni=False, pureout=False):
     V = np.zeros(shape[:-1]) #Value table
     Rseries = np.zeros(N) #tracking average reward for plotting convergence
     for n in xrange(N):
-        print n
+        if verbose:
+            print n
         indicaten = np.zeros(Q.shape) #indicates visited mapairs
         visitn = set() #dict of messages and mapairs visited in episode n
         Rseries[n] = R #adding the most recent ave reward to the data series
@@ -110,7 +114,7 @@ def ewma_mcrl(G, bn, J, N, alpha, delta, eps, uni=False, pureout=False):
                         v = V[message]
                         bb = (b+1) #update equations double letters are time t
                         dd = d+1
-                        vv = (1/dd)*(d*v+(delta**(bb-1))*(rew))    
+                        vv = (1/dd)*(d*v+(delta**(bb-1))*(rew))
                         B[message] = bb #update dictionaries
                         D[message] = dd
                         V[message] = vv
@@ -146,7 +150,7 @@ def ewma_mcrl(G, bn, J, N, alpha, delta, eps, uni=False, pureout=False):
                     visit.add(mapair)#mapair added to visit sets the first time
                     visitn.add(mapair)
                     visitj.add(mapair)
-                    indicaten[mapair] = 1 #only visited actions are updated 
+                    indicaten[mapair] = 1 #only visited actions are updated
         # update CPT with shift towards Qtable argmax actions.
         shift = Q-V[...,np.newaxis]
         idx = np.nonzero(shift) # indices of nonzero shifts (avoid divide by 0)
@@ -173,6 +177,6 @@ def ewma_mcrl(G, bn, J, N, alpha, delta, eps, uni=False, pureout=False):
     for tau in xrange(T0+1, T):
             G.bn_part[bn][tau].CPT = G.bn_part[bn][T0].CPT
     plt.plot(Rseries) #plotting Rseries to gauge convergence
-    fig = plt.gcf() 
+    fig = plt.gcf()
     plt.show()
     return G, fig
