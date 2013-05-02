@@ -1,0 +1,12 @@
+.. _PGTSolutions:
+
+PGT Solutions
+===============
+
+.. toctree::
+   :maxdepth: 2
+
+   Intelligence <pynfg.intelligence>
+   Iterated Intelligence <pynfg.iterintelligence>
+   Policy Intelligence <pynfg.policyintelligence>
+   Coordinated Intelligence <pynfg.coordintelligence>

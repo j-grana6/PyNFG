@@ -11,10 +11,11 @@ Copyright (C) 2013 James Bono (jwbono@gmail.com)
 GNU Affero General Public License
 
 """
-
 from __future__ import division
+
 import numpy as np
 import scipy as sp
+import copy
 import scipy.stats.distributions as randvars
 from node import *
 
@@ -89,25 +90,32 @@ class DecisionNode(Node):
     * :py:meth:`classes.DecisionNode.perturbCPT()`
         
     """
-    def __init__(self, name, player, space, parents=[], \
+    def __init__(self, name, player, space, parents=None, \
                  description='no description', time=None, basename=None, \
                  verbose=False):
         if verbose:
             try:
                 print 'Name: '+ name + '\nDescription: '+ description + \
-                    '\nPlayer: '+player 
+                    '\nPlayer: '+ player 
             except (AttributeError, TypeError):
-                raise AssertionError('name, description, player should be strings')
+                raise AssertionError('name, description, \
+                                     player should be strings')
+        self.continuous = False
         self.name = name
         self.description = description
         self.time = time
         self.basename = basename
         self.player = player
-        self.space = space
+        if isinstance(space, list):
+            self.space = space
+        else:
+            raise TypeError('The space must be a list')
+        if parents is None:
+            parents = []
         self.parents = self._set_parent_dict(parents)
         self._createCPT()
         self._check_disc_parents()
-        self.value = self.space[0]
+#        self.set_value(self.space[0])
         self.continuous = False
         
     def __str__(self):
@@ -128,7 +136,7 @@ class DecisionNode(Node):
         CPT_shape.append(len(self.space))
         self.CPT = np.zeros(CPT_shape)
         
-    def draw_value(self, parentinput={}, setvalue=True, mode=False):
+    def draw_value(self, parentinput=None, setvalue=True, mode=False):
         """Draw a value from the :class:`classes.DecisionNode` object
         
         :arg parentinput: Optional. Specify values of the parents at which to 
@@ -156,21 +164,28 @@ class DecisionNode(Node):
            manually before calling this method.
         
         """
+        if parentinput is None:
+            parentinput={}
         if not self.CPT.any():
             raise AttributeError('CPT for %s is just a zeros array' % self.name)
         ind = []
-        valslist = self.dict2list_vals(parentinput)
-        indo = self.get_CPTindex(valslist, onlyparents=True)
+        indo = self.get_CPTindex(parentinput, valueinput=False)
+        idx = 0
         if not mode:
             cdf = np.cumsum(self.CPT[indo])
             cutoff = np.random.rand()
+#            if cdf[-1] < cutoff:
+#                raise ValueError(self.name, cdf[-1], cutoff, indo, self.CPT[indo]) 
+#            try:
             idx = np.nonzero( cdf >= cutoff )[0][0]
+#            except IndexError:
+#                print self.name, cdf[-1], cutoff, indo, self.CPT[indo]    
         else:
             idx = self.CPT[indo].argmax()
         r = self.space[idx]
         if setvalue:
-            self.value = r
-            return self.value
+            self.set_value(r)
+            return self.get_value()
         else:
             return r
         
@@ -207,7 +222,7 @@ class DecisionNode(Node):
             yy = np.sort(y, axis=-1)
             z = np.diff(yy, axis=-1)/M
         if setCPT:
-            self.CPT = z
+            self.CPT[:] = z
         else:
             return z
             
@@ -223,11 +238,12 @@ class DecisionNode(Node):
         z = np.zeros(self.CPT.shape)
         z += 1/(self.CPT.shape[-1])
         if setCPT:
-            self.CPT = z
+            self.CPT[:] = z
         else:
             return z
         
-    def perturbCPT(self, noise, mixed=True, sliver=None, setCPT=True):
+    def perturbCPT(self, noise, mixed=True, sliver=None, setCPT=True, \
+                   returnweight=False):
         """Create a perturbation of the CPT attribute.
         
         :arg noise: The noise determines the mixture between the current CPT 
@@ -243,23 +259,36 @@ class DecisionNode(Node):
            to perturb the current CPT. Keys are parent names. Values are parent 
            values. If empty, the entire CPT is perturbed. If sliver is nonempty, 
            but specifies values for only a subset of parents, the current values 
-           are used for the remaining parents.
+           are used for the remaining parents. Note that for pure perturbations
+           the noise parameter is ignored and a different action is selected 
+           with probability 1.
         :type sliver: dict
         
-        .. warning::
-            
-           Functionality for pure perturbations is not yet implemented!
-        
         """
+        copiedCPT = copy.copy(self.CPT)
+        weight = 1
         if not mixed: #pure CPT
             if not sliver: #perturbing the whole CPT
-                shape_last = self.CPT.shape[-1]
-                other_dims = self.CPT.shape[0:-1]
-                y = randvars.randint.rvs(0, shape_last, size=other_dims)
+                if returnweight:
+                    copiedCPT, weight = perturbpure(copiedCPT, noise, \
+                                                    returnweight)
+                else:
+                    copiedCPT = perturbpure(copiedCPT, noise, returnweight)
+            else:
+                for par in self.parents:
+                    if par not in sliver:
+                        sliver[par] = self.parents[par].get_value()
+                ind = self.get_CPTindex(sliver, valueinput=False)
+                zeroind = np.nonzero(copiedCPT[ind]==0)
+                if len(actind) == 0:
+                    raise ValueError('The specified sliver has no 0 entries')
+                newactind = np.random.uniform(0,len(actind))
+                copiedCPT[ind] = np.zeros(len(copiedCPT[ind]))
+                copiedCPT[ind][zeroind[newactind]] = 1
         else: #mixed CPT
             randCPT = self.randomCPT(mixed=True, setCPT=False)
             if not sliver: #perturbing the whole thing
-                z = self.CPT*(1-noise) + randCPT*noise
+                copiedCPT = copiedCPT*(1-noise) + randCPT*noise
             else: #perturbing only sliver
                 ind = []
                 for par in self.parents:
@@ -268,19 +297,24 @@ class DecisionNode(Node):
                                                         self.parents[par].space]
                         ind.append(truth.index(True))
                     else:
-                        value = self.parents[par].value
+                        value = self.parents[par].get_value()
                         truth = [(x==value).all() for x in \
                                                         self.parents[par].space]
                         ind.append(truth.index(True))
                 indo = tuple(ind)
-                z = self.CPT
-                z[indo] = z[indo]*(1-noise) + randCPT[indo]*noise
+                copiedCPT[indo] = copiedCPT[indo]*(1-noise) + \
+                                                            randCPT[indo]*noise
         if setCPT:
-            self.CPT = z
+            self.CPT[:] = copiedCPT
+            if returnweight:
+                return weight
         else:
-            return z
+            if returnweight:
+                return copiedCPT, weight
+            else:
+                return copiedCPT
         
-    def prob(self, parentinput={}, valueinput=None):
+    def prob(self, parentinput=None, valueinput=None):
         """Compute the conditional probability of the current or specified value
         
         :arg parentinput: Optional. Specify values of the parents at which to 
@@ -308,17 +342,16 @@ class DecisionNode(Node):
            set the CPT wih :py:meth:`classes.DecisionNode.randomCPT()` or 
            manually before calling this method.
         
-        """        
+        """
+        if parentinput is None:
+            parentinput = {}
         if not self.CPT.any():
             raise RuntimeError('CPT for %s is just a zeros array' % self.name)
-        if valueinput is None:
-            valueinput = self.value
-        valslist = self.dict2list_vals(parentinput, valueinput)
-        indo = self.get_CPTindex(valslist)
+        indo = self.get_CPTindex(parentinput, valueinput)
         p = self.CPT[indo]
         return p  
         
-    def logprob(self, parentinput={}, valueinput=None):
+    def logprob(self, parentinput=None, valueinput=None):
         """Compute the conditional logprob of the current or specified value
         
         :arg parentinput: Optional. Specify values of the parents at which to 
@@ -346,33 +379,57 @@ class DecisionNode(Node):
            set the CPT wih :py:meth:`classes.DecisionNode.randomCPT()` or 
            manually before calling this method.
         
-        """        
+        """
+        if parentinput is None:
+            parentinput = {}
         r = self.prob(parentinput, valueinput)
         return np.log(r)
         
-    def set_value(self, newvalue):
-        """Set the current value of the DecisionNode object
+#    def set_value(self, newvalue):
+#        """Set the current value of the DecisionNode object
+#        
+#        :arg newvalue: a legitimate value of the DecisionNode object, i.e. the 
+#           value must be in :py:attr:`classes.ChanceNode.space`.
+#        
+#        .. warning::
+#            
+#           When arbitrarily setting values, some children may have zero 
+#           probability given their parents. This means the logprob may be -inf. 
+#           If using, :py:meth:`seminfg.SemiNFG.loglike()`, this results in a 
+#           divide by zero error.
+#        
+#        """
+#        if type(newvalue==self.space[0]) is bool:
+#            if newvalue in self.space:
+#                self.set_value(newvalue)
+#            else:
+#                errorstring = "the new value is not in "+self.name+"'s space"
+#                raise ValueError(errorstring)
+#        elif any((newvalue==y).all() for y in self.space):
+#            self.set_value(newvalue)
+#        else:
+#            errorstring = "the new value is not in "+self.name+"'s space"
+#            raise ValueError(errorstring)  
         
-        :arg newvalue: a legitimate value of the DecisionNode object, i.e. the 
-           value must be in :py:attr:`classes.ChanceNode.space`.
-        
-        .. warning::
-            
-           When arbitrarily setting values, some children may have zero 
-           probability given their parents. This means the logprob may be -inf. 
-           If using, :py:meth:`seminfg.SemiNFG.loglike()`, this results in a 
-           divide by zero error.
-        
-        """
-        if type(newvalue==self.space[0]) is bool:
-            if newvalue in self.space:
-                self.value = newvalue
-            else:
-                errorstring = "the new value is not in "+self.name+"'s space"
-                raise ValueError(errorstring)
-        elif any((newvalue==y).all() for y in self.space):
-            self.value = newvalue
-        else:
-            errorstring = "the new value is not in "+self.name+"'s space"
-            raise ValueError(errorstring)  
-        
+def perturbpure(CPT, noise, returnweight):
+    # Generate noise for each possible combination of parent node values and reshape
+    oldCPT = copy.copy(CPT)
+    shape = CPT.shape
+    nmessages = np.prod(shape[:-1])
+    noises = np.random.random((nmessages))
+    noises = noises.reshape(shape[:-1])
+    # Which ones should we switch?
+    switch = noises <noise
+    nswitch = np.sum(switch)
+    randcpt = np.zeros((nswitch, shape[-1]))
+    # Pick the pure strategy for switching rows
+    randcpt[np.arange(nswitch),
+            np.random.randint(0, shape[-1], nswitch)]=1
+    CPT[switch,:]=randcpt
+    if returnweight: #prob of totswitch changes | nmessages, noise, shape[-1]
+        totswitch = np.count_nonzero(np.argmax(CPT,-1)-np.argmax(oldCPT,-1))
+        prob = noise*(1-1/shape[-1]) #prob of selection * prob of diff action
+        weight = prob**totswitch+(1-prob)**(nmessages-totswitch)       
+        return CPT, weight
+    else:
+        return CPT

@@ -18,5 +18,19 @@ setup(
         "scipy",
         "numpy",
 
-    ],
+        "pygraphviz",
+
+        ],
 )
+
+
+
+
+
+
+
+
+
+
+
+

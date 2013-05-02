@@ -128,16 +128,16 @@ class ChanceNode(Node):
             self.CPT = CPTip[0]
             self.parents = self._set_parent_dict(CPTip[1])
             self._check_disc_parents()
-            self.space = CPTip[2]
+            if isinstance(CPTip[2], list):
+                self.space = CPTip[2]
+            else:
+                raise TypeError('The space, CPTip[2], must be a list')
             self.continuous = False
         else:
             self.CPT = None
             self.distribution = distip[0]
             self.params = distip[1]
-            parlist = filter(lambda x: type(x) is DecisionNode \
-                         or type(x) is ChanceNode \
-                         or type(x) is DeterNode, \
-                         self.params)
+            parlist = filter(lambda x: isinstance(x,Node), self.params)
             self.parents = self._set_parent_dict(parlist)
             self.continuous = (randvars.rv_continuous in \
                                 inspect.getmro(type(self.distribution)))
@@ -145,12 +145,12 @@ class ChanceNode(Node):
                 self.space = distip[2]
             else:
                 self.space = []
-        self.draw_value()
+#        self.draw_value()
         
     def __str__(self):
         return self.name
         
-    def draw_value(self, parentinput={}, setvalue=True):
+    def draw_value(self, parentinput=None, setvalue=True):
         """Draw a value from the :class:`classes.ChanceNode` object
         
         :arg parentinput: Optional. Specify values of the parents at which to 
@@ -174,31 +174,30 @@ class ChanceNode(Node):
            must correspond to an item in the parent's space attribute. 
         
         """
+        if parentinput is None:
+            parentinput = {}
         if self.CPT is None:
             if not parentinput:
-                arglist = map(lambda x: x.value \
-                              if type(x) in (DecisionNode, ChanceNode, DeterNode) \
-                              else x, self.params)
+                arglist = map(lambda x: x.get_value() 
+                              if isinstance(x,Node) else x, self.params)
             else:
                 arglist = map(lambda x: parentinput[x.name] \
-                              if type(x) in (DecisionNode, ChanceNode, DeterNode) \
-                              else x, self.params)
+                              if isinstance(x,Node) else x, self.params)
             argtuple = tuple(arglist)
             r = self.distribution.rvs(*argtuple)
         else:
-            valslist = self.dict2list_vals(parentinput)
-            indo = self.get_CPTindex(valslist, onlyparents=True)
+            indo = self.get_CPTindex(parentinput, valueinput=False)
             cdf = np.cumsum(self.CPT[indo])
             cutoff = np.random.rand()
             idx = np.nonzero( cdf >= cutoff )[0][0]
             r = self.space[idx]
         if setvalue:
-            self.value = r
-            return self.value
+            self.set_value(r)
+            return self.get_value()
         else:
             return r
         
-    def prob(self, parentinput={}, valueinput=None):
+    def prob(self, parentinput=None, valueinput=None):
         """Compute the conditional probability of the current or specified value
         
         :arg parentinput: Optional. Specify values of the parents at which to 
@@ -220,31 +219,28 @@ class ChanceNode(Node):
            must correspond to an item in the parent's space attribute. 
         
         """
-        if valueinput is None:
-            valueinput = self.value
+        if parentinput is None:
+            parentinput = {}
         if self.CPT is None:
             if not parentinput:
-                arglist = map(lambda x: x.value \
-                              if type(x) in (DecisionNode, ChanceNode, DeterNode) \
-                              else x, self.params)
+                arglist = map(lambda x: x.get_value() \
+                              if isinstance(x,Node) else x, self.params)
             else:
                 arglist = map(lambda x: parentinput[x.name] \
-                              if type(x) in (DecisionNode, ChanceNode, DeterNode) \
-                              else x, self.params)
+                              if isinstance(x,Node) else x, self.params)
             args = tuple(arglist)
+            if valueinput is None:
+                valueinput = self.get_value()
             if self.continuous:
                 r = self.distribution.pdf(valueinput, *args)
             else:
                 r = self.distribution.pmf(valueinput, *args)
         else:
-            if valueinput is None:
-                valueinput = self.value
-            valslist = self.dict2list_vals(parentinput, valueinput)
-            indo = self.get_CPTindex(valslist)
+            indo = self.get_CPTindex(parentinput, valueinput)
             r = self.CPT[indo]
         return r
         
-    def logprob(self, parentinput={}, valueinput=None):
+    def logprob(self, parentinput=None, valueinput=None):
         """Compute the conditional logprob of the current or specified value
         
         :arg parentinput: Optional. Specify values of the parents at which to 
@@ -268,34 +264,8 @@ class ChanceNode(Node):
         This is equivalent to ``np.log(ChanceNode.prob())``
         
         """
+        if parentinput is None:
+            parentinput = {}
         r = self.prob(parentinput, valueinput)
         return np.log(r)
         
-    def set_value(self, newvalue):
-        """Set the current value of the ChanceNode object
-        
-        :arg newvalue: a legitimate value of the ChanceNode object. If the 
-           ChanceNode object is discrete, then newvalue must be in 
-           :py:attr:`classes.ChanceNode.space`. If the ChanceNode object is 
-           continuous, no corrections are made for values at which the pdf is 0.
-        
-        .. warning::
-            
-           When arbitrarily setting values, some children may have zero 
-           probability given their parents. This means the logprob may be -inf. 
-           If using, :py:meth:`seminfg.SemiNFG.loglike()`, this results in a 
-           divide by zero error.
-        
-        """
-        if self.continuous:
-            self.value = newvalue
-        elif type(newvalue==self.space[0]) is bool:
-            if newvalue in self.space:
-                self.value = newvalue
-            else:
-                errorstring = "the new value is not in "+self.name+"'s space"
-                raise ValueError(errorstring)
-        elif any((newvalue==y).all() for y in self.space):
-            self.value = newvalue
-        else:
-            raise ValueError("the new value is not in "+self.name+"'s space")
