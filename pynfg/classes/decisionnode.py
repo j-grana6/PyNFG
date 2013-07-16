@@ -106,9 +106,11 @@ class DecisionNode(Node):
         self.basename = basename
         self.player = player
         if isinstance(space, list):
-            self.space = space
+            self.space = space   #  Trying to make a space a function
+            self.space_type = 'l'
         else:
-            raise TypeError('The space must be a list')
+            self.space = space
+            self.space_type = 'f'
         if parents is None:
             parents = []
         self.parents = self._set_parent_dict(parents)
@@ -129,13 +131,14 @@ class DecisionNode(Node):
         appropriate size and shape.
 
         """
-        CPT_shape = []
-        for par in self.parents:
-            CPT_shape.append(len(self.parents[par].space))
-        if not CPT_shape:
-            CPT_shape.append(1)
-        CPT_shape.append(len(self.space))
-        self.CPT = np.zeros(CPT_shape)
+        if self.space_type == 'l':
+            CPT_shape = []
+            for par in self.parents:
+                CPT_shape.append(len(self.parents[par].space))
+            if not CPT_shape:
+                CPT_shape.append(1)
+            CPT_shape.append(len(self.space))
+            self.CPT = np.zeros(CPT_shape)
 
     def draw_value(self, parentinput=None, setvalue=True, mode=False):
         """Draw a value from the :class:`classes.DecisionNode` object
@@ -165,23 +168,33 @@ class DecisionNode(Node):
            manually before calling this method.
 
         """
-        if parentinput is None:
-            parentinput={}
-        if not self.CPT.any():
-            raise AttributeError('CPT for %s is just a zeros array' % self.name)
-        ind = []
-        indo = self.get_CPTindex(parentinput, valueinput=False)
-        if not mode:
-            cdf = np.cumsum(self.CPT[indo])
-            cutoff = np.random.rand()
-            idx = np.nonzero( cdf >= cutoff )[0][0]
+        if self.space_type == 'l':
+            if parentinput is None:
+                parentinput={}
+            if not self.CPT.any():
+                raise AttributeError('CPT for %s is just a zeros array' % self.name)
+            ind = []
+            indo = self.get_CPTindex(parentinput, valueinput=False)
+            if not mode:
+                cdf = np.cumsum(self.CPT[indo])
+                cutoff = np.random.rand()
+                idx = np.nonzero( cdf >= cutoff )[0][0]
+            else:
+                idx = self.CPT[indo].argmax()
+            if setvalue:
+                self.set_valueindex(idx)
+                return self.get_value()
+            else:
+                return self.space[idx]
+
         else:
-            idx = self.CPT[indo].argmax()
-        if setvalue:
-            self.set_valueindex(idx)
-            return self.get_value()
-        else:
-            return self.space[idx]
+            self.draw = self.space(self.parents)
+            value = self.draw[0]
+            if setvalue:
+                self.value = value
+            return self.draw[0]
+
+
 
     def randomCPT(self, mixed=False, setCPT=True):
         """Create a random CPT for the :class:`classes.DecisionNode` object
@@ -291,7 +304,7 @@ class DecisionNode(Node):
             else:
                 return copiedCPT
 
-    def prob(self, parentinput=None, valueinput=None):
+    def prob(self, parentinput=None, valueinput=None,funcprob=None):
         """Compute the conditional probability of the current or specified value
 
         :arg parentinput: Optional. Specify values of the parents at which to
@@ -320,13 +333,17 @@ class DecisionNode(Node):
            manually before calling this method.
 
         """
-        if parentinput is None:
-            parentinput = {}
-        if not self.CPT.any():
-            raise RuntimeError('CPT for %s is just a zeros array' % self.name)
-        indo = self.get_CPTindex(parentinput, valueinput)
-        p = self.CPT[indo]
-        return p
+        if self.space_type == 'l':
+            if parentinput is None:
+                parentinput = {}
+            if not self.CPT.any():
+                raise RuntimeError('CPT for %s is just a zeros array' % self.name)
+            indo = self.get_CPTindex(parentinput, valueinput)
+            p = self.CPT[indo]
+            return p
+
+        else:
+            return self.draw[1]
 
     def logprob(self, parentinput=None, valueinput=None):
         """Compute the conditional logprob of the current or specified value
@@ -357,10 +374,13 @@ class DecisionNode(Node):
            manually before calling this method.
 
         """
-        if parentinput is None:
-            parentinput = {}
-        r = self.prob(parentinput, valueinput)
-        return np.log(r)
+        if self.space_type == 'l':
+            if parentinput is None:
+                parentinput = {}
+            r = self.prob(parentinput, valueinput)
+            return np.log(r)
+        else:
+            return np.log(self.draw[1])
 
     def makeCPTpure(self, setCPT=True):
         """Convert mixed CPT to pure CPT,
