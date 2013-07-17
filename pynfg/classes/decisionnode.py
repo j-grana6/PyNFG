@@ -40,6 +40,10 @@ class DecisionNode(Node):
        :class:`classes.ChanceNode` or :class:`nodes.DeterNode`. The order of the
        parents in the list determinesthe rder of the CPT when generated.
     :type parents: list
+    :arg params: keys are input keywords for func, values are parents or
+       fixed values if something other than defaults for non-parent inputs is
+       desired.
+    :type params: dict
     :arg description: a description of the decision node, usually including
        a summary description of the space, parents and children.
     :type description: str
@@ -89,7 +93,7 @@ class DecisionNode(Node):
     * :py:meth:`classes.DecisionNode.perturbCPT()`
 
     """
-    def __init__(self, name, player, space, parents=None, \
+    def __init__(self, name, player, space, params = None, parents=None, \
                  description='no description', time=None, basename=None, \
                  verbose=False):
         if verbose:
@@ -99,25 +103,28 @@ class DecisionNode(Node):
             except (AttributeError, TypeError):
                 raise AssertionError('name, description, \
                                      player should be strings')
-        self.continuous = False
+
         self.name = name
         self.description = description
         self.time = time
+        self.params = params
         self.basename = basename
         self.player = player
         if isinstance(space, list):
             self.space = space   #  Trying to make a space a function
             self.space_type = 'l'
+            self.continuous = False
         else:
             self.space = space
             self.space_type = 'f'
+            self.continuous = True
         if parents is None:
             parents = []
         self.parents = self._set_parent_dict(parents)
         self._createCPT()
         self._check_disc_parents()
 #        self.set_value(self.space[0])
-        self.continuous = False
+#        self.continuous = False
 
     def __str__(self):
         return self.name
@@ -188,7 +195,14 @@ class DecisionNode(Node):
                 return self.space[idx]
 
         else:
-            self.draw = self.space(self.parents)
+            funinput = {}
+            for par in self.params:
+                if isinstance(self.params[par],Node):
+                    funinput[par] = self.params[par].get_value()
+                else:
+                    funinput[par] = self.params[par]
+
+            self.draw = self.space(**funinput)
             value = self.draw[0]
             if setvalue:
                 self.value = value
