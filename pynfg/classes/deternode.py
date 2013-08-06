@@ -90,7 +90,7 @@ class DeterNode(Node):
     * :py:meth:`classes.DeterNode.logprob()`
 
     """
-    def __init__(self, name, func, params, continuous, space=None, \
+    def __init__(self, name, func, params, continuous, parents = None, space=None, \
                  description='no description', time=None, basename=None, \
                  verbose=False):
         if verbose:
@@ -108,7 +108,11 @@ class DeterNode(Node):
             self.space = space
         else:
             raise TypeError('The space must be a list')
-        self.parents = self._set_parent_dict(params.values())
+        if parents is not None:
+            parents.extend(params.values())
+            self.parents = self._set_parent_dict(parents)
+        else:
+            self.parents = self._set_parent_dict(params.values())
         self.continuous = continuous
 #        self.value = None
 #        self.draw_value()
