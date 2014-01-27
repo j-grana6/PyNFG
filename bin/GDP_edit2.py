@@ -53,7 +53,7 @@ def build_net(flights, gdp_times,
     Generates the net.
 
     Note that the 'modified' net is needed.
-p
+
 
 
     Parameters
@@ -66,7 +66,7 @@ p
     flights : list
         A list of flight instances scheduled during the GDP program
 
-    type_space : list
+    theta_space : list
         The possible types of an airline
 
     """
@@ -89,14 +89,17 @@ p
 
     type_dist = {}
     for al in airlines:
+        ## For eacha airline, *independently* draw type distribution.
+        ## Note we cannot just draw from the simplex over all possible type
+        ## profiles.  This is because the Dirichlet Distribution can generate
+        ## impossible type profiles.  For example, if both players have 2 types,
+        ## A and B, the Dirichlet distribution can generate P(AA)=.5, P(BB) = .5
+        ## However, it is impossible to generate this from independent .  
         prob_60 = np.random.random()
         prob_120 = 1-prob_60
         prob_l_b_h = np.random.dirichlet(np.ones(3), 1).flatten()
         type_dist[al] = {'low': prob_l_b_h[0], 'base': prob_l_b_h[1],
                          'high' : prob_l_b_h[2], 60: prob_60, 120: prob_120}
-
-
-
     chance_space = list(product(theta_space, repeat = num_airlines))
     chance_dicts = []
     for game in chance_space:
@@ -300,7 +303,7 @@ p
         def f(FAA, Airline_Delay_Costs):
             """
             This function takes advantage of the fact that global variables
-            inside of a python function are evaluated when the function
+            inside of a python function are evaluated xwhen the function
             is called, not when the function is written.  Therefore, every time
             f is called _al_allocate_nodes will be the current value of
             the nodes
@@ -330,11 +333,11 @@ p
 
 
 
-a = Flight(10, 'sw', 25, 100)
-b = Flight( 11, 'sw', 12, 120)
-c = Flight(12, 'at', 9, 90)
-d = Flight(13, 'at', 19, 66)
-
+# a = Flight(10, 'sw', 25, 100)
+# b = Flight( 11, 'sw', 12, 120)
+# c = Flight(12, 'at', 9, 90)
+# d = Flight(13, 'at', 19, 66)
+# net = build_net([a,b,c,d], [14, 16])
 
 
 
