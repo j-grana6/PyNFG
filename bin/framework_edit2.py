@@ -56,7 +56,7 @@ class Airline(object):
 
     theta : tuple
         First element is cancellation cost (either 60 or 120), second element
-        is delay cost parameters Xo(either low, base or high)
+        is delay cost parameters (either 'low', 'base' or 'high')
 t
     """
 
@@ -91,6 +91,11 @@ t
         social_cost : float
             The social cost as a result of the airlines allocation
 
+        Notes
+        -----
+
+        This function is an *effin beast*.  I already tested it but a formal test script
+        would be a meaningful addition.
         """
         flight_arrival_times = self.flight_arrival_times
         num_passengers = np.asarray([fl.num_passengers for fl in self.flights])
@@ -155,7 +160,6 @@ t
         mod = ilp(C, G, h, A, B, B=Binary)
 
         res = np.asarray(mod[1])
-
         al_cost = np.mat(C).T * np.asarray(res)
         num_passengers = np.tile(num_passengers, (flight_slots,1)).T.flatten()
         #  ^ Matches shape of cost vector
