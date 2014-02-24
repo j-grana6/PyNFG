@@ -1,19 +1,27 @@
 from framework_edit2 import Flight, Airline
 from GDP_edit2 import build_net
-from collections import defaultdict
+from collections import defaultdict, deque
+import time
 a = Flight(10, 'sw', 25, 100)
 b = Flight( 11, 'sw', 12, 120)
 c = Flight(12, 'at', 9, 90)
 d = Flight(13, 'at', 19, 66)
+e = Flight(16, 'american', 23, 55)
+f = Flight(17, 'american', 22, 100)
+g = Flight(18, 'american', 44, 121)
+h = Flight(19, 'united', 33, 100)
+i = Flight(20, 'united', 40, 123)
+j = Flight( 21, 'united', 55, 114)
 
-net = build_net([a,b,c,d], [31, 28])
+net = build_net([a,b,c,d, e,f,g,h,i,j], [20, 28, 31, 45, 50])
 # Intelligence Parameters
-S = 100
-M = 50
+S = 1
+M = 5
 
 
-@profile
+#@profile
 def intel_gdp(net, S, M):
+    social_welfares = []
     aline_nodes = [nd for nd in net.node_dict.values() 
                    if nd.player != 'nature']
     aline_names = [nd.name for nd in aline_nodes]
@@ -38,6 +46,7 @@ def intel_gdp(net, S, M):
     # Sample these nodes if allocate nodes are remembered
     # and not sampled
     for s in range(S):
+        print s
         Sdict = {nd + 'cost' : 0 for nd in aline_names}
         # Keep track of strategy costs
         Sdict['social_welfare'] = 0
@@ -76,20 +85,13 @@ def intel_gdp(net, S, M):
                 airline_allocations[str(cpt_ix) +
                     ''.join(net.node_dict['FAA'].value[0])] = \
                         net.get_values(allocate_names)
-            # VVVVVVVVVVV
-            #start_Theta = net.node_dict['Type Draw'].value
-            #start_strat1 = net.node_dict['atstrat'].value
-            # ^^^^^^^^^^^
-            # VVVVVVVV
-            #assert start_Theta == net.node_dict['Type Draw'].value
-            #assert start_strat1 == net.node_dict['atstrat'].value
-            # ^^^^^^^^
             Sdict['social_welfare'] += ptheta * \
               net.node_dict['social cost'].value
             for aline in aline_names:
                 Sdict[aline+'cost'] += ptheta * \
                   net.utility(net.node_dict[aline].player)
             # Update social welfare and costs
+        social_welfares.append(Sdict['social_welfare'])
         num_better = {net.node_dict[nd].name: 0 for
             nd in aline_names}
         # This keeps track of the number of strategies
@@ -101,7 +103,7 @@ def intel_gdp(net, S, M):
                 net.sample()
                 for theta in net.node_dict['Type Draw'].space:
                     cpt_ix = net.node_dict['Type Draw'].get_CPTindex()[0]
-                    net.set_values({'Type Draw': theta})
+                    net.set_values({'Type Draw' : theta})
                     ptheta = net.node_dict['Type Draw'].prob()
                     net.sample(exclude = exclude1 + allocate_names + res_nodes)
                     # This just does the FAA allocation... i.e. picks the type contingent
@@ -127,5 +129,37 @@ def intel_gdp(net, S, M):
                         net.utility(net.node_dict[aline].player)
                 if ux_prime < Sdict[aline+'cost']:
                     num_better[aline]+=1
+        # At this level, compute the intelligence of each strategy profile
+        # This involves dividing finding the intelligence of each airline's
+        # strategy.  Then assign a (relative) probability.  We  also
+        # want to keep track of airline costs.  Do we care about the distribution
+        # over the slots?  What else?
+
         
-intel_gdp(net, S, M)
+        # However, I think we can permute strategies.  In other words,
+        # we can compute the intelligence of any profile in which the individual
+        # strategy intelligences are computed.  Then we can combine strategy profiles
+        # and then compute their intelligence and then we just need to compute the new
+        # social cost which we have an analytical solution for.  That way we can compute
+        # j intelligences per player.  If we have n players then that is a total of n^j
+        # strategy profiles.
+
+        # No actually you can't do that.  Consider the case where one of the strategies
+        # for one of the players is really bad.  Then a bad (but not as bad) strategy for
+        # the other player will receive high intelligence.  We cannot mix this intelligence
+        # with another because it is computed against the really bad strategy.  The only way
+        # a strategy should receive high probability is if it's good and the opponent's strategy is good.  
+
+        # Furthermore, we can do the same with type contingent profiles for a player.
+        # For example, we can compute the intelligence of a type contingent strategy.
+        # Then we can permute the type contingent strategies.  For example, suppose each player
+        # can be 1 of k types and that we compute the intelligence of each type contingent
+        # strategy m times.  But the question becomes, how do you weight the intelligences of
+        # each type contingent strategy?  This I think blurs the line between the agent/player
+        # representation stuff.  
+
+    return num_better
+        
+
+
+res =intel_gdp(net, S, M)
