@@ -28,11 +28,12 @@ class Flight(object):
         The number of passengers on a flight
     """
 
-    def __init__(self, number, airline, arr_time, num_passengers):
+    def __init__(self, number, airline, arr_time, cta, num_passengers):
         self.number = number
         self.airline = airline
         self.arr_time = arr_time
         self.num_passengers = num_passengers
+        self.cta= cta
 
         #    def __repr__(self):
         #        return self. airline + ' Flight ' + str(self.number)
@@ -65,11 +66,12 @@ t
         self.flights = flights
         self.GDP_slots = GDP_slots
         self.theta_space = theta_space
-        self.flight_arrival_times = [fl.arr_time for fl in self.flights]
+        self.flight_arrival_times = [fl.arr_time for fl in self.flights] # These are ERTA
+        self.ctas = [fl.cta for fl in self.flights] #cta
         self.budget = self._get_budget()
 
 
-    def allocate_slots(self, slots_awarded, theta, d_multiplier = 1, delta=1):
+    def allocate_slots(self, slots_awarded, theta, d_multiplier = 1, delta=.24):
         """
         Solves the binary integer programming problem to best allocate
         GFP slots. It returns the total cost of the optimal allocation.
@@ -98,7 +100,9 @@ t
         would be a meaningful addition.
         """
         flight_arrival_times = self.flight_arrival_times
-        num_passengers = np.asarray([fl.num_passengers for fl in self.flights])
+        delay_times = self.ctas
+        num_passengers = np.asarray([fl.num_passengers for fl in self.flights]) * .869
+        # From pg 27.  WE only need to enter capacity, not num passangers
         # How many slots are in the GDP
         num_slots = len(slots_awarded)
         # How many flights does the airline need to schedule
@@ -109,11 +113,16 @@ t
 
         flight_slots = num_slots + num_flights
         c = []
-        for elem in flight_arrival_times:
+        for elem in delay_times:
             c.append(np.concatenate(((np.asarray(slots_awarded) - elem),
                                      np.ones(len(flight_arrival_times)) *
                                      theta[0])))
-
+        cprime = []
+        for elem in flight_arrival_times:
+            cprime.append(np.concatenate(((np.asarray(slots_awarded) - elem),
+                                     np.ones(len(flight_arrival_times)) *
+                                     theta[0])))
+        
             # c is the minutes late for all flights for each slot.  For example, if an
             # airline has 3 GDP slots and 5 flights, the first 8 elements
             # of c correspond to the minute delay of allocating the first
@@ -122,15 +131,29 @@ t
             # (num_slots + num_flights)*num_flights.
 
         c = np.squeeze(c).flatten()
+        cprime = np.squeeze(cprime).flatten()
+        # 2/22/14 Because ERTA might be different than CTA, we need to account for flights
+        # that actually arrive early and set them to have 0 delay minutes.
+        # Note that some elements where c is 0 means an allocation is impossible,
+        # but some are possible.  Therefore, we need a c for delay costs and we need
+        # a cprime for earliest arrival times. We get "possible" allocations with cprime
+        # but compute costs with c.
+        early = c <= 0
+        c[early]=0
         ones_vec = np.ones(flight_slots)
 
         ##  G1 - Only assigns flights to slots that are after scheduled time:
         # Note that this uses c, which are times, not C which are costs.
-        G1 = np.zeros((len(flight_arrival_times), len(c)))
+        G1 = np.zeros((len(flight_arrival_times), len(cprime)))
         for fl in range(len(flight_arrival_times)):
             G1[fl, fl*len(ones_vec): (fl+1)*len(ones_vec)] = \
-                c[fl*(flight_slots): (fl+1)*(flight_slots)]
+                cprime[fl*(flight_slots): (fl+1)*(flight_slots)]
+        # Here we need to use cprime because the constraint is the flights cannot
+        # arrive before their ERTA, but delay is computed from CTA.  ERTA might be
+        # before CTA, kinda like in Die Hard 2 when the planes are jusr circling
+        # overhead.  
 
+        
         # Multiply by -1 since inequality is a less than and costs are
         # reported as positive numbers.
         G1 = -1 * G1
