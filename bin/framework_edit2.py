@@ -139,7 +139,7 @@ t
         # a cprime for earliest arrival times. We get "possible" allocations with cprime
         # but compute costs with c.
         early = c <= 0
-        c[early]=0
+        c[early] = 0
         ones_vec = np.ones(flight_slots)
 
         ##  G1 - Only assigns flights to slots that are after scheduled time:
@@ -179,15 +179,16 @@ t
         C = matrix(delay_cost(np.asarray(c), theta[1]) * c ) #cost/min * mins
         Binary = set(range(len(c)))
 
-        options['LPX_K_MSGLEV'] = 0  # TODO: Change to errors only
+        options['LPX_K_MSGLEV'] = 1  # TODO: Change to errors only
         mod = ilp(C, G, h, A, B, B=Binary)
 
         res = np.asarray(mod[1])
         al_cost = np.mat(C).T * np.asarray(res)
         num_passengers = np.tile(num_passengers, (flight_slots,1)).T.flatten()
         #  ^ Matches shape of cost vector
-        social_cost =  delta * d_multiplier * np.dot(res.flatten()*c.T, num_passengers)
-
+        #social_cost = delta * np.dot(res.flatten()*((.9986 + .0132*c.T)*c.T), num_passengers)
+        social_cost =  delta * np.dot(res.flatten()*c.T, num_passengers)
+        
         return np.float_(al_cost), np.float_(social_cost)
 
     def _get_budget(self):
@@ -240,7 +241,9 @@ def delay_cost(time_delayed, airline_type):
     """
     above_max = time_delayed > 65
     time_delayed[above_max] = 65
-
+    euro_to_dollar = .9916
+    inflation = 1.22
+    
     if airline_type == 'low':
         cost =   -.10005128 * time_delayed + .01022564*time_delayed**2
     elif airline_type == 'base':
@@ -249,4 +252,4 @@ def delay_cost(time_delayed, airline_type):
         cost =  .82851282*time_delayed + .01854359*time_delayed**2
 
     cost[cost<0] = 0
-    return cost
+    return cost * inflation * euro_to_dollar
