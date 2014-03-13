@@ -2,21 +2,25 @@ from framework_edit2 import Flight, Airline
 from GDP_edit2 import build_net
 from collections import defaultdict, deque
 import time
-a = Flight(10, 'sw', 25, 100)
-b = Flight( 11, 'sw', 12, 120)
-c = Flight(12, 'at', 9, 90)
-d = Flight(13, 'at', 19, 66)
-e = Flight(16, 'american', 23, 55)
-f = Flight(17, 'american', 22, 100)
-g = Flight(18, 'american', 44, 121)
-h = Flight(19, 'united', 33, 100)
-i = Flight(20, 'united', 40, 123)
-j = Flight( 21, 'united', 55, 114)
 
-net = build_net([a,b,c,d, e,f,g,h,i,j], [20, 28, 31, 45, 50])
+a = Flight(1220, 'at', 7, 0, 117)
+b = Flight( 1123, 'sw', 6, 15, 137)
+c = Flight(422, 'sw', 13, 15, 137)
+d = Flight(1454, 'sw', 15, 15, 137)
+e = Flight(3750, 'sw', 21, 30, 122)
+f = Flight(26, 'at', 23, 30, 117)
+g = Flight(1344, 'sw', 26, 35, 137)
+h = Flight(3135, 'sw', 40, 40, 137)
+i = Flight(2269, 'sw', 39, 45, 137)
+j = Flight( 364, 'sw', 47, 50, 137)
+k = Flight( 779, 'sw' , 50, 55, 137)
+l = Flight( 541, 'sw', 55, 55, 137)
+m = Flight(1219, 'at', 47, 56, 117)
+
+net = build_net([a,b,c,d,e,f,g,h,i,j,k,l,m], [0, 12, 24, 36, 48, 60])
 # Intelligence Parameters
-S = 1
-M = 5
+S = 10
+M = 50
 
 
 #@profile
@@ -39,12 +43,19 @@ def intel_gdp(net, S, M):
     # Remember type contingent FAA allocations of spots so that we can 
     # recall old ones and avoid the binary integer programming problem
     # Keys are the type index, values are sets of allocation strings.
+    # For example, a key might be 0, which corresponds to the first
+    # element in the space of theta.  A value would be swatatsw, which
+    # means sw gets first slow, at gets second slot...and so on.  
     airline_allocations = defaultdict(set)
     ### Keys are str(type index)+str(FAA_allocation), values are dicts that
-    # are the result of net.get_values
+    # are the result of net.get_values.  A key might be 0swatswsw which
+    # means that the theta is the first element in the space and
+    # swatswsw are slot allocations.  The values are dictionaries
+    # which tell how each airline allocates given a type and slots
     res_nodes = ['Airline_Delay_Costs', 'social cost']
     # Sample these nodes if allocate nodes are remembered
     # and not sampled
+    intels = defaultdict(list)
     for s in range(S):
         print s
         Sdict = {nd + 'cost' : 0 for nd in aline_names}
@@ -52,8 +63,7 @@ def intel_gdp(net, S, M):
         Sdict['social_welfare'] = 0
         # Keep track of social welfare
         net.sample(exclude = allocate_names)
-        # Sample a strategy (type contingent bids)
-        # In fact, we can exclude all nodes
+        # Sample the airline strategies
         sampled_strats = net.get_values(nodenames = aline_names)
         # Remember those strategies
         for theta in net.node_dict['Type Draw'].space:
@@ -63,9 +73,15 @@ def intel_gdp(net, S, M):
             # We "sample" but all of the nodes besides exclude
             # are DeterNodes
             net.set_values({'Type Draw': theta})
+            # Set theta
             ptheta = net.node_dict['Type Draw'].prob()
+            # Get the probability of theta
             cpt_ix = net.node_dict['Type Draw'].get_CPTindex()[0]
+            # Where in the space of theta are we?
             net.sample(exclude = exclude1 + allocate_names)
+            # Froma  strategy, this sample gets the type contingent bid
+            # as well as the FAA allocation.  
+            
             # Now we want to see if we already sampled the type/allocation
             # pair.  If so, the airlines already know their optimal slot
             # allocation and we can just grab it from a dict
@@ -75,6 +91,8 @@ def intel_gdp(net, S, M):
                                 ''.join(net.node_dict['FAA'].value[0])])
                 # Sets the value of the allocate nodes
                 net.sample(start = res_nodes)
+                # Once the airlines allocate (solve BIP program),
+                # we need to get the costs.  
             else:
                 # Here we need to sample the allocate nodes and the
                 # rest of the net.  Then add to FAA allocation dict
@@ -87,6 +105,7 @@ def intel_gdp(net, S, M):
                         net.get_values(allocate_names)
             Sdict['social_welfare'] += ptheta * \
               net.node_dict['social cost'].value
+            # Computed the weighted social welfare
             for aline in aline_names:
                 Sdict[aline+'cost'] += ptheta * \
                   net.utility(net.node_dict[aline].player)
@@ -97,18 +116,22 @@ def intel_gdp(net, S, M):
         # This keeps track of the number of strategies
         # that s is better than.
         for aline in aline_names:
+            # Now we sample alternative strategies for each airline
             net.set_values(sampled_strats)
+            # Reset net to original strategies
             for m in range(M):
+                # For each alternative strategy
                 ux_prime = 0
-                net.sample()
+                # Initiate utility
+                net.sample(nodenames=[aline])
+                # Sample a new strategy
                 for theta in net.node_dict['Type Draw'].space:
                     cpt_ix = net.node_dict['Type Draw'].get_CPTindex()[0]
                     net.set_values({'Type Draw' : theta})
                     ptheta = net.node_dict['Type Draw'].prob()
                     net.sample(exclude = exclude1 + allocate_names + res_nodes)
-                    # This just does the FAA allocation... i.e. picks the type contingent
+                    # This  picks the type contingent
                     # bid and does the FAA allocation
-                    # Put modified sample here
                     if (''.join(net.node_dict['FAA'].value[0]) in
                         FAA_type_alls[cpt_ix]):
                         net.set_values(airline_allocations[str(cpt_ix) +
@@ -129,6 +152,8 @@ def intel_gdp(net, S, M):
                         net.utility(net.node_dict[aline].player)
                 if ux_prime < Sdict[aline+'cost']:
                     num_better[aline]+=1
+        # The comments below are all inner monologue.  I will delete them
+        #
         # At this level, compute the intelligence of each strategy profile
         # This involves dividing finding the intelligence of each airline's
         # strategy.  Then assign a (relative) probability.  We  also
@@ -157,9 +182,37 @@ def intel_gdp(net, S, M):
         # strategy m times.  But the question becomes, how do you weight the intelligences of
         # each type contingent strategy?  This I think blurs the line between the agent/player
         # representation stuff.  
+            intels[aline].append(num_better[aline])
 
-    return num_better
+
+
+        # We are going to want to return: strategies, intelligences, theta, social welfare, airline costs
+    return net, intels, social_welfares
         
 
 
-res =intel_gdp(net, S, M)
+#res = intel_gdp(net, S, M)
+
+def doitall(num):
+    from framework_edit2 import Flight, Airline
+    from GDP_edit2 import build_net
+    from collections import defaultdict, deque
+    import time
+    from gdp_intel import intel_gdp
+    a = Flight(1220, 'at', 7, 0, 117)
+    b = Flight( 1123, 'sw', 6, 15, 137)
+    c = Flight(422, 'sw', 13, 15, 137)
+    d = Flight(1454, 'sw', 15, 15, 137)
+    e = Flight(3750, 'sw', 21, 30, 122)
+    f = Flight(26, 'at', 23, 30, 117)
+    g = Flight(1344, 'sw', 26, 35, 137)
+    h = Flight(3135, 'sw', 40, 40, 137)
+    i = Flight(2269, 'sw', 39, 45, 137)
+    j = Flight( 364, 'sw', 47, 50, 137)
+    k = Flight( 779, 'sw' , 50, 55, 137)
+    l = Flight( 541, 'sw', 55, 55, 137)
+    m = Flight(1219, 'at', 47, 56, 117)
+    net = build_net([a,b,c,d,e,f,g,h,i,j,k,l,m], [0, 12, 24, 36, 48, 60])
+    res = intel_gdp(net, 5,5)
+    return res
+
