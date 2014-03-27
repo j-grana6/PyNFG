@@ -1,0 +1,17 @@
+ccopy_reg
+_reconstructor
+p0
+(cpynfg.classes.seminfg
+SemiNFG
+p1
+c__builtin__
+object
+p2
+Ntp3
+Rp4
+(dp5
+S'u_functions'
+p6
+(dp7
+S'sw'
+p8
