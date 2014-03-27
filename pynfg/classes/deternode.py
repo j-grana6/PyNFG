@@ -137,7 +137,7 @@ class DeterNode(Node):
            parents are used.
         :type parentinput: dict
         :arg setvalue: (Optional) determines if the random draw replaces
-           :py:attr:`classes.DeterNode.value`. True by default.
+           :py:attr:`classes.DeterNode.valxue`. True by default.
         :type setvalue: bool
         :returns: the value of the deterministic node that corresponds to the
            parent values.
