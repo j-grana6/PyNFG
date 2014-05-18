@@ -1,0 +1,22 @@
+
+For 104 priors
+    Generate the net from a GDP schedule and flight schedule
+    For strategy in range(15000)
+    	Draw a strategy profile-S
+	Instantiate social cost and airline cost variable *
+	For every element in the space of the nature player *
+	    Evaluate the strategies and determine social costs *
+	    Update airline's cost and social cost, weighting by p(nature) *
+	For each airline
+	    Copy the net
+	    For alternative in num_alternative_strats (30?)
+	    	Draw an alternative strategy for airline
+		Repeat * steps only for airline costs
+	    Determine what percent of the alternatives yield higher costs 
+	    than the initial strategy.
+	    Assign above percentage to the intelligence of airline
+	The intelligence of S is the product over airline intelligences
+    Initiate expected_social_cost variable
+    For post samp in range num_posterior samples
+    	Sample a strategy from each of the 104 games and record the social cost
+	Update the expected_social_cost to include \sum_{i=1}^{i=104}social_cost_i/104

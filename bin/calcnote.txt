@@ -1,0 +1,2 @@
+Instead of solving the binary integer programming problem each time, just store them for each airline before the intelligence 
+computation and then access them!

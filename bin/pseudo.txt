@@ -1,0 +1,59 @@
+
+For 104 priors
+    Generate the net from a GDP schedule and flight schedule
+    For strategy in range(15000)
+    	Draw a strategy profile-S
+	Instantiate social cost and airline cost variable *
+	For every element in the space of the nature player *
+	    Evaluate the strategies and determine social costs *
+	    Update airline's cost and social cost, weighting by p(nature) *
+	For each airline
+	    Copy the net
+	    For alternative in num_alternative_strats (30?)
+	    	Draw an alternative strategy for airline
+		Repeat * steps only for airline costs
+	    Determine what percent of the alternatives yield higher costs 
+	    than the initial strategy.
+	    Assign above percentage to the intelligence of airline
+	The intelligence of S is the product over airline intelligences
+    Initiate expected_social_cost variable
+    For post samp in range num_posterior samples
+    	Sample a strategy from each of the 104 games and record the social cost
+	Update the expected_social_cost to include \sum_{i=1}^{i=104}social_cost_i/104
+
+###############Correct one#####################
+   - Get a GDP schedule from your data set with airlines, flights, etc.
+   - Create a game for that GDP schedule between those airlines, with those
+   flights, etc.
+   - for s in range(S)
+   - for each airline i, draw a type-contingent strategy, x_i
+      - for \theta in \Theta
+         1. evaluate the type-contingent strategies at \theta to get the
+         bids
+         2. assign slots to airlines
+         3. assign slots to flights
+         4. evaluate social welfare, costs, profits, etc.
+         5. weight the values in 4 by p(\theta)
+      - record the expected value of social welfare, costs, profits, etc.
+      by summing over \theta the values in 5.
+      - for each airline i
+         - for m in range(M)
+            - draw an alternative strategy x'_i
+            - for \theta in \Theta
+               1. evaluate x'_i and x_{-i} at \theta to get the bids
+               2. assign slots to airlines
+               3. assign slots to flights
+               4. evaluate social welfare, costs, profits, etc.
+               5. weight the values in 4 by p(\theta)
+            - record the expected value of social welfare, costs, profits,
+            etc. by summing over \theta the values in 5.
+         - IQ_i is the proportion of draws m in range(M) for which i's
+         alternative strategies yield lower profits/higher costs than x_i above
+      - assign weight G(IQ) = \prod_i G_i(IQ_i) to the expected value of
+      social welfare, costs, profits, etc for profile x.
+
+
+
+Why not do type contingent intelligences?  For example, draw a type 
+contingent strategy for each player.  Then compute the intelligence of
+the each typeXaction pair.  Then we can 
