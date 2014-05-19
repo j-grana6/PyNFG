@@ -4,25 +4,7 @@ from collections import defaultdict
 import time
 import numpy as np
 
-# a = Flight(1220, 'at', 7, 0, 117)
-# b = Flight(1123, 'sw', 6, 15, 137)
-# c = Flight(422, 'sw', 13, 15, 137)
-# d = Flight(1454, 'sw', 15, 15, 137)
-# e = Flight(3750, 'sw', 21, 30, 122)
-# f = Flight(26, 'at', 23, 30, 117)
-# g = Flight(1344, 'sw', 26, 35, 137)
-# h = Flight(3135, 'sw', 40, 40, 137)
-# i = Flight(2269, 'sw', 39, 45, 137)
-# j = Flight(364, 'sw', 47, 50, 137)
-# k = Flight(779, 'sw', 50, 55, 137)
-# l = Flight(541, 'sw', 55, 55, 137)
-# m = Flight(1219, 'at', 47, 56, 117)
 
-# net = build_net([a, b, c, d, e, f, g, h, i, j, k, l, m],
-#                  [0, 12, 24, 36, 48, 60])
-# # Intelligence Parameters
-# S = 3000
-# M = 50
 
 
 
@@ -105,24 +87,24 @@ def intel_gdp(net, S, M):
             # pair.  If so, the airlines already know their optimal slot
             # allocation and we can just grab it from a dict
 
-            if (''.join(net.node_dict['FAA'].value[0]) in
-                    FAA_type_alls[cpt_ix]):
-                net.set_values(airline_allocations[str(cpt_ix) +
-                    ''.join(net.node_dict['FAA'].value[0])])
+            #if (''.join(net.node_dict['FAA'].value[0]) in
+            #        FAA_type_alls[cpt_ix]):
+            #    net.set_values(airline_allocations[str(cpt_ix) +
+            #        ''.join(net.node_dict['FAA'].value[0])])
                 # Sets the value of the allocate nodes
-                net.sample(start=res_nodes)
+            #    net.sample(start=res_nodes)
                 # Once the airlines allocate (solve BIP program),
                 # we need to get the costs.
-            else:
+            #else:
                 # Here we need to sample the allocate nodes and the
                 # rest of the net.  Then add to FAA allocation dict
                 # as well as airline allocation dict.
-                net.sample(start=allocate_names)
-                FAA_type_alls[cpt_ix].add(
-                    ''.join(net.node_dict['FAA'].value[0]))
-                airline_allocations[str(cpt_ix) +
-                    ''.join(net.node_dict['FAA'].value[0])] = \
-                    net.get_values(allocate_names)
+            net.sample(start=allocate_names)
+                #FAA_type_alls[cpt_ix].add(
+                #    ''.join(net.node_dict['FAA'].value[0]))
+                #airline_allocations[str(cpt_ix) +
+                #    ''.join(net.node_dict['FAA'].value[0])] = \
+                #    net.get_values(allocate_names)
             Sdict['social_welfare'] += ptheta * \
                 net.node_dict['social cost'].value
             # Computed the weighted social welfare
@@ -155,7 +137,8 @@ def intel_gdp(net, S, M):
                 ux_prime = 0
                 ux_prime_second_price = 0
                 # Initiate utility
-                net.sample(nodenames=[aline], exclude = exclude_not_strats)
+                net.node_dict[aline].draw_value()
+                #net.sample(exclude = exclude_not_strats)
                 # Sample a new strategy
                 for theta in net.node_dict['Type Draw'].space:
                     cpt_ix = net.node_dict['Type Draw'].get_CPTindex()[0]
@@ -166,48 +149,51 @@ def intel_gdp(net, S, M):
                     net.node_dict['FAA'].draw_value()
                     # This  picks the type contingent
                     # bid and does the FAA allocation
-                    if (''.join(net.node_dict['FAA'].value[0]) in
-                        FAA_type_alls[cpt_ix]):
-                        net.set_values(airline_allocations[str(cpt_ix) +
-                            ''.join(net.node_dict['FAA'].value[0])])
+
+                    ###############
+                    #if (''.join(net.node_dict['FAA'].value[0]) in
+                    #    FAA_type_alls[cpt_ix]):
+                    #    net.set_values(airline_allocations[str(cpt_ix) +
+                    #        ''.join(net.node_dict['FAA'].value[0])])
                     # # Sets the value of the allocate nodes
-                        net.sample(start=res_nodes)
-                    else:
+                    #    net.sample(start=res_nodes)
+                    # else:
                         # Here we need to sample the allocate nodes and the
                         # rest of the net.  Then add to FAA allocation dict
                         # as well as airline allocation dict.
-                        net.sample(start=allocate_names)
-                        FAA_type_alls[cpt_ix].add(
-                            ''.join(net.node_dict['FAA'].value[0]))
-                        airline_allocations[str(cpt_ix) +
-                            ''.join(net.node_dict['FAA'].value[0])] = \
-                            net.get_values(allocate_names)
+                    net.sample(start=allocate_names)
+                        #FAA_type_alls[cpt_ix].add(
+                        #    ''.join(net.node_dict['FAA'].value[0]))
+                        #airline_allocations[str(cpt_ix) +
+                        #    ''.join(net.node_dict['FAA'].value[0])] = \
+                        #    net.get_values(allocate_names)
+
+                    ############
                     ux_prime += ptheta * \
                         net.utility(net.node_dict[aline].player)[0]
                     ux_prime_second_price += ptheta * \
                         net.utility(net.node_dict[aline].player)[1]
+                
                 if ux_prime < Sdict[aline+'cost']:
                     num_better[aline] += 1
                 if ux_prime_second_price < Sdict_second_price[aline+'cost']:
                     num_better_second_price[aline] += 1
+                #print ux_prime, ux_prime_second_price
+                #print Sdict[aline + 'cost'], Sdict_second_price[aline + 'cost']
+                #print '==============================================='
+                #print ux_prime < Sdict[aline+'cost'] and ux_prime_second_price < Sdict_second_price[aline+'cost']
             intels[aline].append(num_better[aline])
-            intels_second_price[aline].append(num_better[aline])
+            intels_second_price[aline].append(num_better_second_price[aline])
         # We are going to want to return: strategies, intelligences, theta, social welfare, airline costs
     return  intels,  intels_second_price, social_welfares, \
             net.node_dict['Type Draw'].CPT, net.node_dict['Type Draw'].space, \
             al_strats, al_costs, al_costs_second_price, del_cost
 
 
-#res = intel_gdp(net, S, M)
 
-#@profile
-def doitall(seed):
-    import numpy as np
-    np.random.seed(seed)
-    from framework_edit2 import Flight
-    from GDP_edit2 import build_net
-    from collections import defaultdict
-    #from gdp_intel import intel_gdp
+
+if __name__ =='__main__':
+
     a = Flight(1220, 'at', 7, 0, 117)
     b = Flight(1123, 'sw', 6, 15, 137)
     c = Flight(422, 'sw', 13, 15, 137)
@@ -221,12 +207,42 @@ def doitall(seed):
     k = Flight(779, 'sw', 50, 55, 137)
     l = Flight(541, 'sw', 55, 55, 137)
     m = Flight(1219, 'at', 47, 56, 117)
+
     net = build_net([a, b, c, d, e, f, g, h, i, j, k, l, m],
                     [0, 12, 24, 36, 48, 60])
-    if seed == 11:
-        net.node_dict['Type Draw'].CPT = np.ones(len(net.node_dict['Type Draw'].space)) / float(len(net.node_dict['Type Draw'].space))
-    res = intel_gdp(net, 3000, 50)
-    return res
+    # Intelligence Parameters
+    S = 5
+    M = 50
+
+    res = intel_gdp(net, S, M)
+
+# #@profile
+# def doitall(seed):
+#     import numpy as np
+#     np.random.seed(seed)
+#     from framework_edit2 import Flight
+#     from GDP_edit2 import build_net
+#     from collections import defaultdict
+#     #from gdp_intel import intel_gdp
+#     a = Flight(1220, 'at', 7, 0, 117)
+#     b = Flight(1123, 'sw', 6, 15, 137)
+#     c = Flight(422, 'sw', 13, 15, 137)
+#     d = Flight(1454, 'sw', 15, 15, 137)
+#     e = Flight(3750, 'sw', 21, 30, 122)
+#     f = Flight(26, 'at', 23, 30, 117)
+#     g = Flight(1344, 'sw', 26, 35, 137)
+#     h = Flight(3135, 'sw', 40, 40, 137)
+#     i = Flight(2269, 'sw', 39, 45, 137)
+#     j = Flight(364, 'sw', 47, 50, 137)
+#     k = Flight(779, 'sw', 50, 55, 137)
+#     l = Flight(541, 'sw', 55, 55, 137)
+#     m = Flight(1219, 'at', 47, 56, 117)
+#     net = build_net([a, b, c, d, e, f, g, h, i, j, k, l, m],
+#                     [0, 12, 24, 36, 48, 60])
+#     if seed == 11:
+#         net.node_dict['Type Draw'].CPT = np.ones(len(net.node_dict['Type Draw'].space)) / float(len(net.node_dict['Type Draw'].space))
+#     res = intel_gdp(net, 3000, 50)
+#     return res
 
 # from multiprocessing import Pool
 # p=Pool()

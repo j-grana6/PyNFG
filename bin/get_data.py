@@ -3,25 +3,19 @@ import pandas as pd
 from framework_edit2 import *
 from GDP_edit2 import *
 import os
-import sys
 
-#dpath = '/home/justin/Documents/papers/gdp/datasets/'
-#fpath = ''.join([dpath, sys.argv[1]])
-fpath = sys.argv[1]
-print fpath
-acode = sys.argv[2]
-pdump = ''.join((acode, '.p'))
-print pdump
-def get_net_params(datapath):
-    data = pd.read_excel(datapath, 'final')
+
+def get_data(datapath):
+    dpath = '/home/justin/Documents/papers/gdp/datasets/'
+    fpath = ''.join([dpath, datapath])
+    data = pd.read_excel(fpath, 'final')
     data = data[data.passengers >30]
     data = data[data.arr<=240]
+    data.arr = data.arr + np.random.random(len(data.arr))*.0001
     rel_cts = data.CARRIER.value_counts()/ sum(data.CARRIER.value_counts())
     als = rel_cts[rel_cts > .1].index
-    print rel_cts
     data = data[data.CARRIER.isin(als)]
-    data.arr = data.arr + np.random.random(size = len(data.arr))*.001
-    print data
+    #  print len(data)
     num_flights = len(data.CARRIER)
     last_flight = max(data.arr)
     end_time = last_flight + 1
@@ -35,8 +29,8 @@ def get_net_params(datapath):
     net = build_net(flights, gdp_times)
     return net, data
 
-bothres = get_net_params(fpath)
-tres = bothres[0]
+# tres = get_net_params(fpath)
+# i=0
 # for f in os.listdir(dpath):
 #     i +=1
 #     #print dpath
@@ -52,7 +46,7 @@ tres = bothres[0]
 #     print f
 
 
-from gdp_intel import intel_gdp
-import pickle
-tcase = intel_gdp(tres, 3000,50)
-pickle.dump(tcase, open(pdump, 'wb'))
+# from gdp_intel import intel_gdp
+# # import pickle
+# tcase = intel_gdp(tres, 5,50)
+#pickle.dump(tcase, open('bos.p', 'wb'))
