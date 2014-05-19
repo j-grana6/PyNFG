@@ -9,9 +9,9 @@ import numpy as np
 
 
 def intel_gdp(net, S, M):
-    net.node_dict['Type Draw'].CPT = np.ones(
-        len(net.node_dict['Type Draw'].space)) / \
-        float(len(net.node_dict['Type Draw'].space))
+    #net.node_dict['Type Draw'].CPT = np.ones(
+    #    len(net.node_dict['Type Draw'].space)) / \
+    #    float(len(net.node_dict['Type Draw'].space))
     exclude_not_strats = [nd.name for nd in net.node_dict.values()
                    if nd.player == 'nature']
     social_welfares = []

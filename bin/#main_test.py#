@@ -10,7 +10,7 @@ import sys
 fpath = sys.argv[1]
 print fpath
 acode = sys.argv[2]
-pdump = ''.join((acode, '.p'))
+pdump = ''.join(('test', acode, '.p'))
 print pdump
 def get_net_params(datapath):
     data = pd.read_excel(datapath, 'final')
@@ -54,5 +54,5 @@ tres = bothres[0]
 
 from gdp_intel import intel_gdp
 import pickle
-tcase = intel_gdp(tres, 3000,25)
+tcase = intel_gdp(tres, ,50)
 pickle.dump(tcase, open(pdump, 'wb'))
