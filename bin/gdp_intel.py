@@ -105,24 +105,24 @@ def intel_gdp(net, S, M):
             # pair.  If so, the airlines already know their optimal slot
             # allocation and we can just grab it from a dict
 
-            # if (''.join(net.node_dict['FAA'].value[0]) in
-            #         FAA_type_alls[cpt_ix]):
-            #     net.set_values(airline_allocations[str(cpt_ix) +
-            #         ''.join(net.node_dict['FAA'].value[0])])
-            #     # Sets the value of the allocate nodes
-            #     net.sample(start=res_nodes)
+            if (''.join(net.node_dict['FAA'].value[0]) in
+                    FAA_type_alls[cpt_ix]):
+                net.set_values(airline_allocations[str(cpt_ix) +
+                    ''.join(net.node_dict['FAA'].value[0])])
+                # Sets the value of the allocate nodes
+                net.sample(start=res_nodes)
                 # Once the airlines allocate (solve BIP program),
                 # we need to get the costs.
-            # else:
+            else:
                 # Here we need to sample the allocate nodes and the
                 # rest of the net.  Then add to FAA allocation dict
                 # as well as airline allocation dict.
-            net.sample(start=allocate_names)
-                # FAA_type_alls[cpt_ix].add(
-                #     ''.join(net.node_dict['FAA'].value[0]))
-                # airline_allocations[str(cpt_ix) +
-                #     ''.join(net.node_dict['FAA'].value[0])] = \
-                #     net.get_values(allocate_names)
+                net.sample(start=allocate_names)
+                FAA_type_alls[cpt_ix].add(
+                    ''.join(net.node_dict['FAA'].value[0]))
+                airline_allocations[str(cpt_ix) +
+                    ''.join(net.node_dict['FAA'].value[0])] = \
+                    net.get_values(allocate_names)
             Sdict['social_welfare'] += ptheta * \
                 net.node_dict['social cost'].value
             # Computed the weighted social welfare
@@ -166,22 +166,22 @@ def intel_gdp(net, S, M):
                     net.node_dict['FAA'].draw_value()
                     # This  picks the type contingent
                     # bid and does the FAA allocation
-                    # if (''.join(net.node_dict['FAA'].value[0]) in
-                    #     FAA_type_alls[cpt_ix]):
-                    #     net.set_values(airline_allocations[str(cpt_ix) +
-                    #         ''.join(net.node_dict['FAA'].value[0])])
+                    if (''.join(net.node_dict['FAA'].value[0]) in
+                        FAA_type_alls[cpt_ix]):
+                        net.set_values(airline_allocations[str(cpt_ix) +
+                            ''.join(net.node_dict['FAA'].value[0])])
                     # # Sets the value of the allocate nodes
-                    #     net.sample(start=res_nodes)
-                    # else:
+                        net.sample(start=res_nodes)
+                    else:
                         # Here we need to sample the allocate nodes and the
                         # rest of the net.  Then add to FAA allocation dict
                         # as well as airline allocation dict.
-                    net.sample(start=allocate_names)
-                        # FAA_type_alls[cpt_ix].add(
-                        #     ''.join(net.node_dict['FAA'].value[0]))
-                        # airline_allocations[str(cpt_ix) +
-                        #     ''.join(net.node_dict['FAA'].value[0])] = \
-                        #     net.get_values(allocate_names)
+                        net.sample(start=allocate_names)
+                        FAA_type_alls[cpt_ix].add(
+                            ''.join(net.node_dict['FAA'].value[0]))
+                        airline_allocations[str(cpt_ix) +
+                            ''.join(net.node_dict['FAA'].value[0])] = \
+                            net.get_values(allocate_names)
                     ux_prime += ptheta * \
                         net.utility(net.node_dict[aline].player)[0]
                     ux_prime_second_price += ptheta * \
