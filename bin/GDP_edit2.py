@@ -6,68 +6,6 @@ import bisect
 import copy
 
 
-def faa_slot_selection(al_instances, bid_nodes, times):
-    """ Allocates slots based on bids
-
-    Parameters
-    ----------
-
-    al_nodes : dict
-        Keys are airline names, values are Airline instance DeterNode
-
-    bid_nodes : dict
-        Keys are airline names, values are Airline instance DecisionNode
-
-    times : list
-        THe list of GDP times available
-
-    """
-
-    bnodes = copy.copy(bid_nodes.values())
-    # Get the bid_nodes
-    airlines = bid_nodes.keys()  # Maintaining Order
-    #slot_counts = dict.fromkeys(airlines, 0)
-    # How many slots each airline has
-    bids = np.asarray([b.value for b in bnodes])
-    # Get the bids
-    winners = []
-    # Store the winners
-    bid_costs = dict.fromkeys(airlines, 0)
-    sec_price_bid_cost = dict.fromkeys(airlines, 0)
-    # Record the bid costs
-    arrival_times = {al: al_instances[al].flight_arrival_times for al in airlines}
-    for slot_ix in range(len(times)):
-        slot = times[slot_ix]
-        alines = copy.copy(airlines)
-        not_assigned = True
-        slot_bids = list(bids[:, slot_ix])
-        while not_assigned:
-            #Get the bids
-            bid = max(slot_bids)
-            ix = slot_bids.index(bid)
-            # Get the index of sorted bifd
-            pos_al = alines[ix]
-            try :
-                if  min(arrival_times[pos_al]) < (slot+.5)  :
-                    winners.append(pos_al)
-                    arrival_times[pos_al] = arrival_times[pos_al][1:]
-                    bid_costs[pos_al] += bid
-                    slot_bids.remove(bid)
-                    try : 
-                        sec_price_bid_cost[pos_al] += max(slot_bids)
-                    except ValueError:
-                        sec_price_bid_cost[pos_al] += bid
-                    not_assigned = False
-                else:
-                    slot_bids.remove(bid)
-                    alines.remove(pos_al)
-            except ValueError:
-                slot_bids.remove(bid)
-                alines.remove(pos_al)
-
-    return np.asarray(winners), bid_costs, sec_price_bid_cost
-
-# @profile
 # def faa_slot_selection(al_instances, bid_nodes, times):
 #     """ Allocates slots based on bids
 
@@ -85,10 +23,10 @@ def faa_slot_selection(al_instances, bid_nodes, times):
 
 #     """
 
-#     bnodes = bid_nodes.values()
+#     bnodes = copy.copy(bid_nodes.values())
 #     # Get the bid_nodes
 #     airlines = bid_nodes.keys()  # Maintaining Order
-#     slot_counts = dict.fromkeys(airlines, 0)
+#     #slot_counts = dict.fromkeys(airlines, 0)
 #     # How many slots each airline has
 #     bids = np.asarray([b.value for b in bnodes])
 #     # Get the bids
@@ -97,34 +35,96 @@ def faa_slot_selection(al_instances, bid_nodes, times):
 #     bid_costs = dict.fromkeys(airlines, 0)
 #     sec_price_bid_cost = dict.fromkeys(airlines, 0)
 #     # Record the bid costs
-#     for slot in range(len(times)):
-#         slot_bids = bids[:, slot]
-#         #Get the bids
-#         ix = np.argsort(slot_bids)
-#         # Get the index of sorted bifd
-#         sorted_airlines = [airlines[i] for i in ix][::-1]
-#         # Sort the airlines
-#         sorted_bids = slot_bids[ix][::-1]
-#         # Sort the bids and reverse the order (highest first)
-#         ctr=0
-#         for al in sorted_airlines:
-#             # For each airline
-#             if slot_counts[al] < bisect.bisect_right(
-#                     al_instances[al].flight_arrival_times, times[slot]):
-#                 # If the airline can service the flight
-#                 bid_costs[al] += sorted_bids[ctr]  
-#                 try :
-#                     sec_price_bid_cost[al] += sorted_bids[ctr +1 ]
-#                 except IndexError:
-#                     sec_price_bid_cost[al] += sorted_bids[ctr]
-#                 winners.append(al)
-#                 slot_counts[al] +=1
-#                 ctr +=1
-#                 break
-#             else:
-#                 ctr+=1
-#     winners  = np.asarray(winners)
-#     return winners, bid_costs, sec_price_bid_cost
+#     arrival_times = {al: al_instances[al].flight_arrival_times for al in airlines}
+#     for slot_ix in range(len(times)):
+#         slot = times[slot_ix]
+#         alines = copy.copy(airlines)
+#         not_assigned = True
+#         slot_bids = list(bids[:, slot_ix])
+#         while not_assigned:
+#             #Get the bids
+#             bid = max(slot_bids)
+#             ix = slot_bids.index(bid)
+#             # Get the index of sorted bifd
+#             pos_al = alines[ix]
+#             try :
+#                 if  min(arrival_times[pos_al]) < (slot+.5)  :
+#                     winners.append(pos_al)
+#                     arrival_times[pos_al] = arrival_times[pos_al][1:]
+#                     bid_costs[pos_al] += bid
+#                     slot_bids.remove(bid)
+#                     try : 
+#                         sec_price_bid_cost[pos_al] += max(slot_bids)
+#                     except ValueError:
+#                         sec_price_bid_cost[pos_al] += bid
+#                     not_assigned = False
+#                 else:
+#                     slot_bids.remove(bid)
+#                     alines.remove(pos_al)
+#             except ValueError:
+#                 slot_bids.remove(bid)
+#                 alines.remove(pos_al)
+
+#     return np.asarray(winners), bid_costs, sec_price_bid_cost
+
+# @profile
+def faa_slot_selection(al_instances, bid_nodes, times):
+    """ Allocates slots based on bids
+
+    Parameters
+    ----------
+
+    al_nodes : dict
+        Keys are airline names, values are Airline instance DeterNode
+
+    bid_nodes : dict
+        Keys are airline names, values are Airline instance DecisionNode
+
+    times : list
+        THe list of GDP times available
+
+    """
+
+    bnodes = bid_nodes.values()
+    # Get the bid_nodes
+    airlines = bid_nodes.keys()  # Maintaining Order
+    slot_counts = dict.fromkeys(airlines, 0)
+    # How many slots each airline has
+    bids = np.asarray([b.value for b in bnodes])
+    # Get the bids
+    winners = []
+    # Store the winners
+    bid_costs = dict.fromkeys(airlines, 0)
+    sec_price_bid_cost = dict.fromkeys(airlines, 0)
+    # Record the bid costs
+    for slot in range(len(times)):
+        slot_bids = bids[:, slot]
+        #Get the bids
+        ix = np.argsort(slot_bids)
+        # Get the index of sorted bifd
+        sorted_airlines = [airlines[i] for i in ix][::-1]
+        # Sort the airlines
+        sorted_bids = slot_bids[ix][::-1]
+        # Sort the bids and reverse the order (highest first)
+        ctr=0
+        for al in sorted_airlines:
+            # For each airline
+            if slot_counts[al] < bisect.bisect_right(
+                    al_instances[al].flight_arrival_times, times[slot]):
+                # If the airline can service the flight
+                bid_costs[al] += sorted_bids[ctr]  
+                try :
+                    sec_price_bid_cost[al] += sorted_bids[ctr +1 ]
+                except IndexError:
+                    sec_price_bid_cost[al] += sorted_bids[ctr]
+                winners.append(al)
+                slot_counts[al] +=1
+                ctr +=1
+                break
+            else:
+                ctr+=1
+    winners  = np.asarray(winners)
+    return winners, bid_costs, sec_price_bid_cost
 
 
 
@@ -414,13 +414,22 @@ def build_net(flights, gdp_times,
 
     return G
 
+# a = Flight(1220, 'at', 7, 0, 117)
+# b = Flight(1123, 'sw', 6, 15, 137)
+# c = Flight(422, 'sw', 13, 15, 137)
+# d = Flight(1454, 'sw', 15, 15, 137)
+# e = Flight(3750, 'sw', 21, 30, 122)
+# f = Flight(26, 'at', 23, 30, 117)
+# g = Flight(1344, 'sw', 26, 35, 137)
+# h = Flight(3135, 'sw', 40, 40, 137)
+# i = Flight(2269, 'sw', 39, 45, 137)
+# j = Flight(364, 'sw', 47, 50, 137)
+# k = Flight(779, 'sw', 50, 55, 137)
+# l = Flight(541, 'sw', 55, 55, 137)
+# m = Flight(1219, 'at', 47, 56, 117)
 
-
-a = Flight(10, 'sw', 24, 25, 100)
-b = Flight( 11, 'sw', 11, 12, 120)
-c = Flight(12, 'at', 8, 9, 90)
-d = Flight(13, 'at', 18, 19, 66)
-net = build_net([a,b,c,d], [14, 16])
+# net = build_net([a, b, c, d, e, f, g, h, i, j, k, l, m],
+#                  [0, 12, 24, 36, 48, 60])
 
 
 

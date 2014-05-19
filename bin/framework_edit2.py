@@ -31,7 +31,7 @@ class Flight(object):
     def __init__(self, number, airline, arr_time, cta, num_passengers):
         self.number = number
         self.airline = airline
-        self.arr_time = arr_time + np.random.random()*.0001
+        self.arr_time = arr_time
         self.num_passengers = num_passengers
         self.cta= cta
 
@@ -192,8 +192,8 @@ t
         al_cost = np.mat(C).T * np.asarray(res)
         num_passengers = np.tile(num_passengers, (flight_slots,1)).T.flatten()
         #  ^ Matches shape of cost vector
-        #social_cost = delta * np.dot(res.flatten()*((.9986 + .0132*c.T)*c.T), num_passengers)
-        social_cost =  delta * np.dot(res.flatten()*c.T, num_passengers)
+        social_cost = delta * np.dot(res.flatten()*((.9986 + .0132*c.T)*c.T), num_passengers)
+        #social_cost =  delta * np.dot(res.flatten()*c.T, num_passengers)
         
         return np.float_(al_cost), np.float_(social_cost)
 
@@ -230,10 +230,11 @@ t
         s_a = np.asarray(sorted(slots_awarded))
         delay_times = []
         num_pass = []
+        itest = range(len(s_a))[::-1]
         for ix in range(len(s_a))[::-1]:
             try:
                 slot = s_a[ix]
-                f = np.max(f_a_t[f_a_t < slot])
+                f = np.max(f_a_t[f_a_t <=slot])
                 delay_times.append( slot - f )
                 f_a_t = f_a_t[f_a_t != f]
                 num_pass_ix = self.flight_arrival_times.index(f)
