@@ -234,8 +234,8 @@ t
         for ix in range(len(s_a))[::-1]:
             try:
                 slot = s_a[ix]
-                f = np.max(f_a_t[f_a_t <=slot])
-                delay_times.append( slot - f )
+                f = np.max(f_a_t[f_a_t <=slot +.1])
+                delay_times.append( max(0, slot - f) )
                 f_a_t = f_a_t[f_a_t != f]
                 num_pass_ix = self.flight_arrival_times.index(f)
                 num_pass.append(self.num_pass[num_pass_ix])

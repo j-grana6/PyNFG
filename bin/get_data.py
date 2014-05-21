@@ -11,6 +11,7 @@ def get_data(datapath):
     data = pd.read_excel(fpath, 'final')
     data = data[data.passengers >30]
     data = data[data.arr<=240]
+    #np.random.seed(5)
     data.arr = data.arr + np.random.random(len(data.arr))*.0001
     rel_cts = data.CARRIER.value_counts()/ sum(data.CARRIER.value_counts())
     als = rel_cts[rel_cts > .1].index
@@ -19,7 +20,7 @@ def get_data(datapath):
     num_flights = len(data.CARRIER)
     last_flight = max(data.arr)
     end_time = last_flight + 1
-    gdp_times = sorted(list(data.arr))[::2]
+    gdp_times = sorted(list(data.arr))[::4]
     flights = []
     ctr = 1
     # Used as artifact from flight instance

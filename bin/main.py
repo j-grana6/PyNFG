@@ -13,6 +13,7 @@ acode = sys.argv[2]
 pdump = ''.join((acode, '.p'))
 print pdump
 def get_net_params(datapath):
+    #np.random.seed(6)
     data = pd.read_excel(datapath, 'final')
     data = data[data.passengers >30]
     data = data[data.arr<=240]
@@ -25,7 +26,7 @@ def get_net_params(datapath):
     num_flights = len(data.CARRIER)
     last_flight = max(data.arr)
     end_time = last_flight + 1
-    gdp_times = sorted(list(data.arr))[::2]
+    gdp_times = sorted(list(data.arr))[::4]
     flights = []
     ctr = 1
     # Used as artifact from flight instance
@@ -52,7 +53,21 @@ tres = bothres[0]
 #     print f
 
 
+
+def get_results(seed):
+    np.random.seed(seed)
+    bothres = get_net_params(fpath)
+    tres = bothres[0]
+    return intel_gdp(tres, 800, 50)
+
+
 from gdp_intel import intel_gdp
 import pickle
-tcase = intel_gdp(tres, 3000,25)
+from multiprocessing import Pool
+p=Pool()
+
+
+tcase = p.map(get_results, np.arange(1,9,1))
+
 pickle.dump(tcase, open(pdump, 'wb'))
+#bothres[1].to_csv(pdump +'.csv')
