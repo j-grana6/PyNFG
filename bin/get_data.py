@@ -5,7 +5,7 @@ from GDP_edit2 import *
 import os
 
 
-def get_data(datapath, maxtime=60):
+def get_data(datapath, maxtime=60, mintime=0, gdpdivide=4):
     dpath = '/home/justin/Documents/papers/gdp/datasets/'
     fpath = ''.join([dpath, datapath])
     data = pd.read_excel(fpath, 'final')
@@ -14,13 +14,13 @@ def get_data(datapath, maxtime=60):
     als = rel_cts[rel_cts > .1].index
     print rel_cts
     data = data[data.CARRIER.isin(als)]
-    data = data[data.arr>maxtime-60]
+    data = data[data.arr>mintime] 
     data = data[data.arr <=maxtime+ .05]
     data.arr = data.arr + np.random.random(len(data.arr))*.0001
     num_flights = len(data.CARRIER)
     last_flight = max(data.arr)
     end_time = last_flight + 1
-    gdp_times = sorted(list(data.arr))[::2]
+    gdp_times = sorted(list(data.arr))[::gdpdivide]
     flights = []
     ctr = 1
     # Used as artifact from flight instance

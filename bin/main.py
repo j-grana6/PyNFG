@@ -12,8 +12,10 @@ print fpath
 acode = sys.argv[2]
 pdump = ''.join((acode, '.p'))
 maxtime = float(sys.argv[3])
+mintime = float(sys.argv[4])
+gdpdivide = int(sys.argv[5])
 print pdump
-def get_net_params(datapath, maxtime=maxtime):
+def get_net_params(datapath, maxtime=maxtime, gdpdivide=gdpdivide, mintime=mintime):
     #np.random.seed(6)
     data = pd.read_excel(datapath, 'final')
     data = data[data.passengers >30]
@@ -21,14 +23,14 @@ def get_net_params(datapath, maxtime=maxtime):
     als = rel_cts[rel_cts > .1].index
     print rel_cts
     data = data[data.CARRIER.isin(als)]
-    data = data[data.arr>=maxtime-60]
-    data = data[data.arr <maxtime]
+    data = data[data.arr>=mintime]
+    data = data[data.arr <= maxtime+.1]
     data.arr = data.arr + np.random.random(size = len(data.arr))*.001
     print data
     num_flights = len(data.CARRIER)
     last_flight = max(data.arr)
     end_time = last_flight + 1
-    gdp_times = sorted(list(data.arr))[::2]
+    gdp_times = sorted(list(data.arr))[::gdpdivide]
     flights = []
     ctr = 1
     # Used as artifact from flight instance
@@ -60,16 +62,16 @@ def get_results(seed):
     np.random.seed(seed)
     bothres = get_net_params(fpath)
     tres = bothres[0]
-    return intel_gdp(tres, 800, 50)
+    return intel_gdp(tres, 10000, 100)
 
 
 from gdp_intel import intel_gdp
 import pickle
-from multiprocessing import Pool
-p=Pool()
+#from multiprocessing import Pool
+#p=Pool()
 
 
-tcase = p.map(get_results, np.arange(112,119,1))
-
+#tcase = p.map(get_results, np.arange(112,119,1))
+tcase = get_results(634)
 pickle.dump(tcase, open(pdump, 'wb'))
 #bothres[1].to_csv(pdump +'.csv')

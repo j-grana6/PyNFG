@@ -241,7 +241,8 @@ t
                 num_pass.append(self.num_pass[num_pass_ix])
             except ValueError:
                 pass #If when calculating budget, can't assign a flight
-        num_cancelled = len(self.flight_arrival_times) - len(delay_times) 
+        num_cancelled = len(self.flight_arrival_times) - len(delay_times)
+        
         for f in f_a_t: # Get the passengers of cancelled flights
             num_pass_ix = self.flight_arrival_times.index(f)
             num_pass.append(self.num_pass[num_pass_ix])

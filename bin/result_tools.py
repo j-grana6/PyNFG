@@ -1,7 +1,7 @@
 import numpy as np
 from get_data import get_data
 
-def get_posterior(res, auction='First', S=50, gamma=3):
+def get_posterior(res, auction='First', S=200, gamma=3):
     """For 1 result instance"""
     als = res[0].keys()
     if auction == 'First':
@@ -29,9 +29,9 @@ def plot_sw_convergence(res, gamma=6, auction='First'):
     running_sw = np.cumsum(np.asarray(tc) * posterior) * normalizing
     return running_sw
 
-def get_rbs_sw(net, data, res):
+def get_rbs_sw(net, data, res, gdpdivide=4):
     alines = list(set(list(data.CARRIER.values)))
-    gdp_len = len(sorted(list(data.arr))[::2])
+    gdp_len = len(sorted(list(data.arr))[::gdpdivide])
     srtd_df = data.sort('arr')
     winners = list(srtd_df.CARRIER.values[:gdp_len])
     no_bid = dict(zip(alines, [0]*len(alines)))
@@ -66,11 +66,11 @@ def get_rbs_sw(net, data, res):
 
     return scs, alcosts, tc
     
-def compare_welfare(res, dname, gamma=12, maxtime=60, auction='First'):
+def compare_welfare(res, dname, gamma=12, maxtime=60, mintime=0, gdpdivide= 4, auction='First'):
     
-    data = get_data(dname, maxtime=maxtime)
+    d = get_data(dname, maxtime=maxtime, mintime=mintime, gdpdivide=gdpdivide)
     for r in res:
-        rbs = get_rbs_sw(data[0], data[1], r)[-1]
+        rbs = get_rbs_sw(d[0], d[1], r, gdpdivide=gdpdivide)[-1]
         pgt_auction = plot_sw_convergence(r, gamma=gamma, auction=auction)[-1]
         print rbs, pgt_auction
 
