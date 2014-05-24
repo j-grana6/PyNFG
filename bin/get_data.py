@@ -5,22 +5,22 @@ from GDP_edit2 import *
 import os
 
 
-def get_data(datapath):
+def get_data(datapath, maxtime=60):
     dpath = '/home/justin/Documents/papers/gdp/datasets/'
     fpath = ''.join([dpath, datapath])
     data = pd.read_excel(fpath, 'final')
     data = data[data.passengers >30]
-    data = data[data.arr<=240]
-    #np.random.seed(5)
-    data.arr = data.arr + np.random.random(len(data.arr))*.0001
     rel_cts = data.CARRIER.value_counts()/ sum(data.CARRIER.value_counts())
     als = rel_cts[rel_cts > .1].index
+    print rel_cts
     data = data[data.CARRIER.isin(als)]
-    #  print len(data)
+    data = data[data.arr>maxtime-60]
+    data = data[data.arr <=maxtime+ .05]
+    data.arr = data.arr + np.random.random(len(data.arr))*.0001
     num_flights = len(data.CARRIER)
     last_flight = max(data.arr)
     end_time = last_flight + 1
-    gdp_times = sorted(list(data.arr))[::4]
+    gdp_times = sorted(list(data.arr))[::2]
     flights = []
     ctr = 1
     # Used as artifact from flight instance

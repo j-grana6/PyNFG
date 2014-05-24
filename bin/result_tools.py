@@ -1,4 +1,5 @@
 import numpy as np
+from get_data import get_data
 
 def get_posterior(res, auction='First', S=50, gamma=3):
     """For 1 result instance"""
@@ -16,27 +17,60 @@ def get_posterior(res, auction='First', S=50, gamma=3):
 def plot_sw_convergence(res, gamma=6, auction='First'):
     posterior = get_posterior(res, gamma=gamma, auction = auction)
     sw = res[2]
+    #print np.mean(sw)
+    costs = []
+    for _, val in res[-1].iteritems():
+       costs.append(val)
+    costs = np.asarray(costs)
+    t_al_c = np.sum(costs, axis =0)
+    #print t_al_c
     normalizing = 1. / np.cumsum(posterior)
-    running_sw = np.cumsum(np.asarray(sw) * posterior) * normalizing
+    tc = sw - t_al_c
+    running_sw = np.cumsum(np.asarray(tc) * posterior) * normalizing
     return running_sw
 
 def get_rbs_sw(net, data, res):
     alines = list(set(list(data.CARRIER.values)))
-    gdp_len = len(sorted(list(data.arr))[::4])
+    gdp_len = len(sorted(list(data.arr))[::2])
     srtd_df = data.sort('arr')
     winners = list(srtd_df.CARRIER.values[:gdp_len])
     no_bid = dict(zip(alines, [0]*len(alines)))
     net.set_values({'FAA': (np.asarray(winners), no_bid, no_bid)})
     scs = []
     net.node_dict['Type Draw'].CPT=res[3]
-    alcosts = dict(zip(alines, [[]]*len(alines)))
+    alcosts = dict(zip(alines, [0]*len(alines)))
+    #print alcosts
     net.sample(start = ['FAA'], exclude = ['FAA'])
     for elem in net.node_dict['Type Draw'].space:
         net.set_values({'Type Draw': elem})
         net.sample(start = ['FAA'], exclude = ['FAA'])
         scs.append(net.node_dict['social cost'].value * net.node_dict['Type Draw'].prob())
+        #print net.utility('CO'),  net.utility('DL')
         for al in alines:
-            alcosts[al].append(net.utility(al))
-    return scs, alcosts
+            
+            #alcosts[al].append(net.node_dict['Type Draw'].prob() * net.utility(al)[0])
+            # print al
+            #alcosts[al].append((1./36) * net.utility(al)[0])
+            #print net.utility('CO')[0] == net.utility('DL')[0]
+            alcosts[al] += net.node_dict['Type Draw'].prob() * net.utility(al)[0]
+            #alcosts[al] += 1/36. * net.utility(al)[0]
+            #print net.utility(al), al
+        #print alcosts['CO'][-1],  alcosts['DL'][-1]
+            
+    tc = np.sum(scs)
+    #print np.mean(alcosts['CO'])
+    #print np.mean(alcosts['DL'])
+    #print np.sum(alcosts['CO'])/36.
+    for al in alcosts.keys():
+       tc += np.sum(alcosts[al])
+
+    return scs, alcosts, tc
     
+def compare_welfare(res, dname, gamma=12, maxtime=60, auction='First'):
     
+    data = get_data(dname, maxtime=maxtime)
+    for r in res:
+        rbs = get_rbs_sw(data[0], data[1], r)[-1]
+        pgt_auction = plot_sw_convergence(r, gamma=gamma, auction=auction)[-1]
+        print rbs, pgt_auction
+
